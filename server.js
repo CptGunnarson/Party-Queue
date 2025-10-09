@@ -118,6 +118,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Server läuft auf http://localhost:${PORT}`);
-  console.log(`👉 Öffne http://localhost:${PORT}/login um Spotify zu verbinden`);
+  console.log(`✅ Server läuft auf Port ${PORT}`);
 });
