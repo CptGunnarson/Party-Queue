@@ -7,116 +7,95 @@
     <style>
       body {
         font-family: Arial, sans-serif;
-        background-color: #121212;
-        color: white;
+        background-color: #111;
+        color: #fff;
+        margin: 0;
+        padding: 0;
         text-align: center;
-        padding: 50px;
       }
+
       h1 {
         color: #1db954;
+        margin-top: 40px;
       }
-      input {
-        padding: 10px;
-        width: 300px;
-        border-radius: 6px;
+
+      .search {
+        width: 80%;
+        max-width: 400px;
+        padding: 12px;
         border: none;
+        border-radius: 25px;
         font-size: 16px;
+        outline: none;
+        margin-top: 30px;
       }
+
+      #results {
+        margin: 40px auto;
+        width: 90%;
+        max-width: 600px;
+      }
+
+      .track {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #222;
+        border-radius: 12px;
+        padding: 10px 15px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      .track img {
+        border-radius: 8px;
+        margin-right: 10px;
+      }
+
+      .info {
+        flex: 1;
+        text-align: left;
+      }
+
       button {
         background-color: #1db954;
         color: white;
         border: none;
-        padding: 10px 20px;
-        border-radius: 6px;
-        font-size: 16px;
-        cursor: pointer;
-        margin-left: 10px;
-      }
-      button:hover {
-        background-color: #17a74a;
-      }
-      .results {
-        margin-top: 20px;
-        text-align: left;
-        display: inline-block;
-        width: 400px;
-      }
-      .song {
-        background: #282828;
-        padding: 10px;
         border-radius: 8px;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s ease;
       }
-      .song img {
-        width: 50px;
-        height: 50px;
-        border-radius: 6px;
-        margin-right: 10px;
+
+      button:hover {
+        background-color: #17a44d;
+      }
+
+      .footer {
+        margin-top: 60px;
+        font-size: 13px;
+        color: #888;
       }
     </style>
   </head>
+
   <body>
-    <h1>🎉 Spotify Party Queue</h1>
-    <p>Gib einen Song ein, um ihn zur Warteschlange hinzuzufügen:</p>
-    <input type="text" id="searchInput" placeholder="Songtitel eingeben..." />
-    <button onclick="search()">🔍 Suchen</button>
+    <h1>🎵 Spotify Party Queue</h1>
 
-    <div class="results" id="results"></div>
+    <input
+      type="text"
+      id="search"
+      class="search"
+      placeholder="Song oder Künstler suchen..."
+    />
 
-    <script>
-      async function search() {
-        const query = document.getElementById("searchInput").value.trim();
-        if (!query) return alert("Bitte gib einen Suchbegriff ein!");
+    <div id="results"></div>
 
-        const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
-        if (!res.ok) {
-          alert("Bitte zuerst Spotify verbinden! (Gehe auf /login)");
-          return;
-        }
+    <div class="footer">
+      Verbunden mit Spotify – Gäste können Songs zur Warteschlange hinzufügen.
+    </div>
 
-        const tracks = await res.json();
-        const container = document.getElementById("results");
-        container.innerHTML = "";
-
-        if (tracks.length === 0) {
-          container.innerHTML = "<p>Keine Ergebnisse gefunden.</p>";
-          return;
-        }
-
-        tracks.forEach((track) => {
-          const div = document.createElement("div");
-          div.className = "song";
-          div.innerHTML = `
-            <div style="display:flex;align-items:center;">
-              <img src="${track.album.images[0].url}" />
-              <div>
-                <strong>${track.name}</strong><br/>
-                <small>${track.artists.map((a) => a.name).join(", ")}</small>
-              </div>
-            </div>
-            <button onclick="addToQueue('${track.uri}')">➕ Hinzufügen</button>
-          `;
-          container.appendChild(div);
-        });
-      }
-
-      async function addToQueue(uri) {
-        const res = await fetch("/add", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uri }),
-        });
-
-        if (res.ok) {
-          alert("✅ Song wurde zur Warteschlange hinzugefügt!");
-        } else {
-          alert("❌ Fehler: Bitte Spotify erneut verbinden.");
-        }
-      }
-</script>
-<script src="script.js"></script>
- </body>
+    <script src="script.js"></script>
+  </body>
 </html>
