@@ -3,22 +3,119 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spotify Party Queue 🎶</title>
-    <link rel="stylesheet" href="style.css" />
+    <title>Spotify Party Queue</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #121212;
+        color: white;
+        text-align: center;
+        padding: 50px;
+      }
+      h1 {
+        color: #1db954;
+      }
+      input {
+        padding: 10px;
+        width: 300px;
+        border-radius: 6px;
+        border: none;
+        font-size: 16px;
+      }
+      button {
+        background-color: #1db954;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 10px;
+      }
+      button:hover {
+        background-color: #17a74a;
+      }
+      .results {
+        margin-top: 20px;
+        text-align: left;
+        display: inline-block;
+        width: 400px;
+      }
+      .song {
+        background: #282828;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .song img {
+        width: 50px;
+        height: 50px;
+        border-radius: 6px;
+        margin-right: 10px;
+      }
+    </style>
   </head>
   <body>
-    <div class="container">
-      <h1>🎉 Spotify Party Queue</h1>
-      <p>Such dir einen Song aus und füge ihn zur Warteschlange hinzu!</p>
+    <h1>🎉 Spotify Party Queue</h1>
+    <p>Gib einen Song ein, um ihn zur Warteschlange hinzuzufügen:</p>
+    <input type="text" id="searchInput" placeholder="Songtitel eingeben..." />
+    <button onclick="search()">🔍 Suchen</button>
 
-      <input
-        type="text"
-        id="search"
-        placeholder="Song oder Künstler eingeben..."
-      />
-      <div id="results"></div>
-    </div>
+    <div class="results" id="results"></div>
 
-    <script src="main.js"></script>
+    <script>
+      async function search() {
+        const query = document.getElementById("searchInput").value.trim();
+        if (!query) return alert("Bitte gib einen Suchbegriff ein!");
+
+        const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
+        if (!res.ok) {
+          alert("Bitte zuerst Spotify verbinden! (Gehe auf /login)");
+          return;
+        }
+
+        const tracks = await res.json();
+        const container = document.getElementById("results");
+        container.innerHTML = "";
+
+        if (tracks.length === 0) {
+          container.innerHTML = "<p>Keine Ergebnisse gefunden.</p>";
+          return;
+        }
+
+        tracks.forEach((track) => {
+          const div = document.createElement("div");
+          div.className = "song";
+          div.innerHTML = `
+            <div style="display:flex;align-items:center;">
+              <img src="${track.album.images[0].url}" />
+              <div>
+                <strong>${track.name}</strong><br/>
+                <small>${track.artists.map((a) => a.name).join(", ")}</small>
+              </div>
+            </div>
+            <button onclick="addToQueue('${track.uri}')">➕ Hinzufügen</button>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      async function addToQueue(uri) {
+        const res = await fetch("/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uri }),
+        });
+
+        if (res.ok) {
+          alert("✅ Song wurde zur Warteschlange hinzugefügt!");
+        } else {
+          alert("❌ Fehler: Bitte Spotify erneut verbinden.");
+        }
+      }
+    </script>
   </body>
 </html>
