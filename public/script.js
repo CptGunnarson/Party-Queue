@@ -1,36 +1,55 @@
-const searchInput = document.getElementById("search");
-const resultsDiv = document.getElementById("results");
+const input = document.getElementById("searchInput");
+const results = document.getElementById("results");
+const statusBox = document.getElementById("status");
 
-// Songs suchen
-async function searchTracks(query) {
-  if (!query) {
-    resultsDiv.innerHTML = "";
+let searchTimeout = null;
+
+// --- Live-Suche ---
+input.addEventListener("input", () => {
+  const query = input.value.trim();
+  clearTimeout(searchTimeout);
+  if (query.length < 2) {
+    results.innerHTML = "";
     return;
   }
 
-  try {
-    const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
-    const data = await res.json();
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) {
+        throw new Error("Bitte Spotify erneut verbinden.");
+      }
 
-    resultsDiv.innerHTML = data
-      .map(
-        (track) => `
-        <div class="track">
-          <img src="${track.album.images[0]?.url || ''}" width="50">
-          <div class="info">
-            <strong>${track.name}</strong><br>
-            ${track.artists.map((a) => a.name).join(", ")}
+      const data = await res.json();
+      results.innerHTML = "";
+
+      data.forEach((track) => {
+        const li = document.createElement("li");
+        li.className =
+          "flex justify-between items-center bg-gray-800 rounded-lg p-3 hover:bg-gray-700";
+        li.innerHTML = `
+          <div>
+            <div class="font-semibold">${track.name}</div>
+            <div class="text-sm text-gray-400">${track.artists
+              .map((a) => a.name)
+              .join(", ")}</div>
           </div>
-          <button onclick="addToQueue('${track.uri}')">+ Hinzufügen</button>
-        </div>`
-      )
-      .join("");
-  } catch (err) {
-    console.error("Fehler bei der Suche:", err);
-  }
-}
+          <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded add-btn">
+            ➕
+          </button>
+        `;
+        li.querySelector(".add-btn").addEventListener("click", async () => {
+          await addToQueue(track.uri);
+        });
+        results.appendChild(li);
+      });
+    } catch (err) {
+      showStatus(err.message, true);
+    }
+  }, 400); // kleine Verzögerung für Live-Suche
+});
 
-// Song zur Queue hinzufügen
+// --- Song hinzufügen ---
 async function addToQueue(uri) {
   try {
     const res = await fetch("/add", {
@@ -39,23 +58,20 @@ async function addToQueue(uri) {
       body: JSON.stringify({ uri }),
     });
 
-    if (res.ok) {
-      alert("✅ Song wurde zur Queue hinzugefügt!");
-    } else {
-      const errText = await res.text();
-      console.error("Fehler:", errText);
-      alert("❌ Fehler: Bitte Spotify erneut verbinden.");
+    if (!res.ok) {
+      throw new Error("Bitte Spotify erneut verbinden.");
     }
+
+    showStatus("✅ Song hinzugefügt!");
   } catch (err) {
-    console.error("Fehler beim Hinzufügen:", err);
-    alert("❌ Fehler: Verbindung zum Server fehlgeschlagen.");
+    showStatus(err.message, true);
   }
 }
 
-// 🔥 Live-Suche beim Tippen
-if (searchInput) {
-  searchInput.addEventListener("input", (e) => {
-    const query = e.target.value.trim();
-    searchTracks(query);
-  });
+// --- Statusmeldung ---
+function showStatus(message, error = false) {
+  statusBox.textContent = message;
+  statusBox.classList.remove("hidden");
+  statusBox.style.backgroundColor = error ? "#dc2626" : "#16a34a";
+  setTimeout(() => statusBox.classList.add("hidden"), 3000);
 }
