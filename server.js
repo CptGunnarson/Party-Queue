@@ -11,11 +11,8 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-
-// Public-Files (HTML/CSS/JS)
 app.use(express.static(path.join(__dirname, "public")));
 
-// Umgebungsvariablen aus .env
 const {
   SPOTIFY_CLIENT_ID,
   SPOTIFY_CLIENT_SECRET,
@@ -26,25 +23,41 @@ const {
 let access_token = "";
 let refresh_token = "";
 
+// -------- Hilfsfunktion: Token erneuern --------
+async function refreshAccessToken() {
+  if (!refresh_token) return false;
+
+  const response = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization:
+        "Basic " +
+        Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString(
+          "base64"
+        ),
+    },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (data.access_token) {
+    access_token = data.access_token;
+    console.log("🔁 Access Token erneuert");
+    return true;
+  } else {
+    console.error("❌ Fehler beim Token-Refresh:", data);
+    return false;
+  }
+}
+
 // -------- Startseite --------
 app.get("/", (req, res) => {
-  res.send(`
-    <html>
-      <head>
-        <title>Spotify Party Queue</title>
-        <style>
-          body { font-family: Arial; text-align: center; padding: 40px; background: #121212; color: white; }
-          a { background: #1DB954; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; }
-          a:hover { background: #17a74a; }
-        </style>
-      </head>
-      <body>
-        <h1>🎶 Spotify Party Queue</h1>
-        <p>Verbinde dich mit Spotify, um Songs zur Warteschlange hinzuzufügen:</p>
-        <a href="/login">Mit Spotify verbinden</a>
-      </body>
-    </html>
-  `);
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // -------- Spotify Login --------
@@ -72,7 +85,7 @@ app.get("/callback", async (req, res) => {
       "Content-Type": "application/x-www-form-urlencoded",
       Authorization:
         "Basic " +
-        Buffer.from(SPOTIFY_CLIENT_ID + ":" + SPOTIFY_CLIENT_SECRET).toString(
+        Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString(
           "base64"
         ),
     },
@@ -87,12 +100,15 @@ app.get("/callback", async (req, res) => {
   access_token = data.access_token;
   refresh_token = data.refresh_token;
 
+  console.log("✅ Spotify verbunden!");
+
   res.send(`
     <html>
       <head><title>Verbunden</title></head>
-      <body style="font-family: Arial; text-align: center; padding: 40px;">
+      <body style="font-family:Arial;text-align:center;padding:40px;">
         <h2>✅ Spotify erfolgreich verbunden!</h2>
-        <p>Du kannst dieses Fenster schließen.</p>
+        <p>Du kannst dieses Fenster schließen und Songs hinzufügen.</p>
+        <a href="/">Zurück zur App</a>
       </body>
     </html>
   `);
@@ -103,12 +119,24 @@ app.get("/search", async (req, res) => {
   if (!access_token) return res.status(401).send("Nicht verbunden");
 
   const q = req.query.q;
-  const response = await fetch(
+  let response = await fetch(
     `https://api.spotify.com/v1/search?type=track&limit=10&q=${encodeURIComponent(
       q
     )}`,
     { headers: { Authorization: "Bearer " + access_token } }
   );
+
+  // Falls Token abgelaufen -> erneuern und nochmal versuchen
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (!refreshed) return res.status(401).send("Nicht verbunden");
+    response = await fetch(
+      `https://api.spotify.com/v1/search?type=track&limit=10&q=${encodeURIComponent(
+        q
+      )}`,
+      { headers: { Authorization: "Bearer " + access_token } }
+    );
+  }
 
   const data = await response.json();
   res.json(data.tracks ? data.tracks.items : []);
@@ -119,13 +147,26 @@ app.post("/add", async (req, res) => {
   if (!access_token) return res.status(401).send("Nicht verbunden");
 
   const { uri } = req.body;
-  const response = await fetch(
+  let response = await fetch(
     `https://api.spotify.com/v1/me/player/queue?uri=${encodeURIComponent(uri)}`,
     {
       method: "POST",
       headers: { Authorization: "Bearer " + access_token },
     }
   );
+
+  // Falls Token abgelaufen -> erneuern und nochmal versuchen
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (!refreshed) return res.status(401).send("Nicht verbunden");
+    response = await fetch(
+      `https://api.spotify.com/v1/me/player/queue?uri=${encodeURIComponent(uri)}`,
+      {
+        method: "POST",
+        headers: { Authorization: "Bearer " + access_token },
+      }
+    );
+  }
 
   if (response.status === 204) {
     res.json({ success: true });
