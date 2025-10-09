@@ -1,24 +1,11 @@
-
-\# Spotify Party Queue
-
-
+# Spotify Party Queue
 
 Einfache Webapp, mit der Gäste Songs zur Spotify-Warteschlange hinzufügen können.
 
+## Schritte
 
-
-\## Schritte
-
-1\. `npm install`
-
-2\. `.env` erstellen und Client-ID/Secret eintragen
-
-3\. `node server.js`
-
-4\. Im Browser `http://localhost:3000/login` öffnen und Spotify verbinden
-
-5\. Gäste: `http://<DEINE\_IP>:3000`
-
-
-
->>>>>>> 77be399 (Initial commit für Party-Queue)
+1. `npm install`
+2. `.env` erstellen und Client-ID/Secret eintragen
+3. `node server.js`
+4. Im Browser `http://localhost:3000/login` öffnen und Spotify verbinden
+5. Gäste: `http://<DEINE_IP>:3000`
