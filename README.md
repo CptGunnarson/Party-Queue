@@ -1,3 +1,4 @@
+
 \# Spotify Party Queue
 
 
@@ -20,4 +21,4 @@ Einfache Webapp, mit der Gäste Songs zur Spotify-Warteschlange hinzufügen kön
 
 
 
-"# Party-Queue" 
+>>>>>>> 77be399 (Initial commit für Party-Queue)
