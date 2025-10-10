@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Einfache Party-Webapp, mit der Gäste Songs zur Spotify-Warteschlange hinzufügen können.",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
