@@ -76,6 +76,8 @@
       button:hover {
         background-color: #1ed760;
       }
+
+      /* Toast-Styles */
       .toast {
         position: fixed;
         bottom: 20px;
@@ -94,13 +96,13 @@
       .toast.error {
         background-color: #e22134;
       }
+
       @keyframes fadeInOut {
         0% {
           opacity: 0;
           transform: translate(-50%, 20px);
         }
-        10%,
-        90% {
+        10%, 90% {
           opacity: 1;
           transform: translate(-50%, 0);
         }
@@ -108,39 +110,48 @@
           opacity: 0;
           transform: translate(-50%, 20px);
         }
-#status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: -10px;
-  margin-bottom: 10px;
-  font-size: 0.9rem;
-  color: #ccc;
-}
-.dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: gray;
-}
-.dot.online {
-  background-color: #1db954;
-}
-.dot.offline {
-  background-color: #e22134;
-}
+      }
 
+      /* Statusanzeige */
+      #status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: -10px;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        color: #ccc;
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: gray;
+      }
+      .dot.online {
+        background-color: #1db954;
+      }
+      .dot.idle {
+        background-color: gray;
+      }
+      .dot.offline {
+        background-color: red;
       }
     </style>
   </head>
   <body>
     <header>🎉 Spotify Warteschlange</header>
- <div id="status">
-    <span id="statusDot" class="dot"></span>
-    <span id="statusText">Verbindung prüfen...</span>
-  </div>
 
-    <input type="text" id="search" placeholder="Song oder Künstler eingeben..." />
+    <div id="status">
+      <span id="statusDot" class="dot"></span>
+      <span id="statusText">Verbindung prüfen...</span>
+    </div>
+
+    <input
+      type="text"
+      id="search"
+      placeholder="Song oder Künstler eingeben..."
+    />
 
     <div id="results"></div>
 
