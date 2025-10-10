@@ -250,5 +250,34 @@
         }
       });
     </script>
-  </body>
+      <div id="offline-banner" 
+         style="display:none;position:fixed;top:0;left:0;width:100%;
+                background:#d9534f;color:white;text-align:center;
+                padding:10px;font-weight:bold;z-index:1000;">
+      ⚠️ Verbindung getrennt – versuche, wieder online zu gehen...
+    </div>
+
+    <script>
+      // --- Offline-Status prüfen ---
+      function updateOnlineStatus() {
+        const banner = document.getElementById("offline-banner");
+        if (!navigator.onLine) {
+          banner.style.display = "block";
+        } else {
+          banner.style.display = "none";
+        }
+      }
+      window.addEventListener("online", updateOnlineStatus);
+      window.addEventListener("offline", updateOnlineStatus);
+      updateOnlineStatus();
+
+      // --- Service Worker registrieren ---
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/service-worker.js")
+          .then(() => console.log("🛰️ Service Worker aktiv"))
+          .catch((err) => console.warn("SW Fehler:", err));
+      }
+    </script>
+</body>
 </html>
