@@ -190,12 +190,10 @@
                 setTimeout(() => (card.style.background = "#181818"), 800);
               } else {
                 showToast("Bitte Spotify erneut verbinden.", "#d9534f");
-                setTimeout(() => (window.location.href = "/login"), 2000);
-              }
+                          }
             })
             .catch(() =>
-              showToast("Fehler beim Hinzufügen.", "#d9534f")
-            );
+              showToast("Fehler beim Hinzufügen.", "#d9534f");
         }
       });
     </script>

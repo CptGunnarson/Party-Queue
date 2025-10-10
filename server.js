@@ -210,6 +210,25 @@ app.get("/", (req, res) => {
 });
 
 // --- Server starten ---
+// --- Token-Status prüfen ---
+app.get("/status", async (req, res) => {
+  if (!access_token) return res.json({ connected: false, reason: "Kein Token" });
+
+  try {
+    const response = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: "Bearer " + access_token },
+    });
+    if (response.status === 200) {
+      const me = await response.json();
+      res.json({ connected: true, user: me.display_name });
+    } else {
+      const data = await response.json();
+      res.json({ connected: false, error: data });
+    }
+  } catch (e) {
+    res.json({ connected: false, error: e.message });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server läuft auf Port ${PORT}`);
 });
