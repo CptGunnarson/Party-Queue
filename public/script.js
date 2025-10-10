@@ -1,5 +1,5 @@
 // --- Spotify Party Queue Frontend ---
-// Live-Suche, Toast-Bestätigung & automatischer Login
+// Live-Suche, Toast-Bestätigung, automatischer Login & sanfte Animationen
 
 let searchTimeout;
 
@@ -16,38 +16,40 @@ window.addEventListener("load", () => {
     .catch((err) => console.error("Login-Check Fehler:", err));
 });
 
-// === Toast-Funktion (transparent, oben, mit Fade) ===
+// === Toast-Funktion (transparent, oben, mit Slide-In) ===
 function showToast(message) {
   const toast = document.createElement("div");
   toast.textContent = message;
   Object.assign(toast.style, {
     position: "fixed",
-    top: "20px",
+    top: "-60px",
     left: "50%",
     transform: "translateX(-50%)",
-    background: "rgba(29,185,84,0.92)",
+    background: "rgba(29,185,84,0.95)", // Spotify-Grün halbtransparent
     color: "#fff",
     padding: "14px 28px",
-    borderRadius: "10px",
+    borderRadius: "12px",
     fontSize: "1rem",
     fontWeight: "bold",
     zIndex: "999999",
     boxShadow: "0 6px 12px rgba(0,0,0,0.4)",
     opacity: "0",
-    transition: "opacity 0.4s ease, transform 0.4s ease",
+    transition: "opacity 0.5s ease, top 0.6s cubic-bezier(0.19, 1, 0.22, 1)",
   });
 
   document.body.appendChild(toast);
 
+  // sanft von oben einblenden
   requestAnimationFrame(() => {
+    toast.style.top = "20px";
     toast.style.opacity = "1";
-    toast.style.transform = "translate(-50%, 0)";
   });
 
+  // nach 3 Sekunden wieder nach oben verschwinden
   setTimeout(() => {
+    toast.style.top = "-60px";
     toast.style.opacity = "0";
-    toast.style.transform = "translate(-50%, -20px)";
-    setTimeout(() => toast.remove(), 500);
+    setTimeout(() => toast.remove(), 600);
   }, 2500);
 }
 
