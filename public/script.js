@@ -2,11 +2,23 @@
 
 let searchTimeout;
 
+
 // Toast-Funktion (für Erfolg / Fehler)
 function showToast(message, type = "info") {
   const toast = document.createElement("div");
   toast.textContent = message;
-  toast.className = "toast " + type;
+  toast.style.position = "fixed";
+  toast.style.bottom = "20px";
+  toast.style.left = "50%";
+  toast.style.transform = "translateX(-50%)";
+  toast.style.background = "#1db954";
+  toast.style.color = "white";
+  toast.style.padding = "10px 20px";
+  toast.style.borderRadius = "8px";
+  toast.style.fontWeight = "bold";
+  toast.style.zIndex = "999";
+  toast.style.boxShadow = "0 4px 10px rgba(0,0,0,0.3)";
+  toast.style.animation = "fadeOut 3s ease forwards";
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }
@@ -74,8 +86,24 @@ function addToQueue(uri) {
     body: JSON.stringify({ uri }),
   })
     .then((res) => {
-      if (res.ok) console.log("✅ Song hinzugefügt");
-      else console.warn("⚠️ Spotify antwortete mit Fehler:", res.status);
+      if (res.ok) {
+        const msg = document.createElement("div");
+        msg.textContent = "✅ Song hinzugefügt!";
+        msg.style.color = "#1db954";
+        msg.style.fontWeight = "bold";
+        msg.style.marginTop = "10px";
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 2000);
+      }
     })
-    .catch((err) => console.error("Netzwerkfehler:", err));
-}
+    .catch((err) => console.error("Fehler beim Hinzufügen:", err));
+}// CSS-Animation fürs Ausblenden
+const style = document.createElement("style");
+style.innerHTML = `
+@keyframes fadeOut {
+  0% { opacity: 1; transform: translate(-50%,0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%,20px); }
+}`;
+document.head.appendChild(style);
+
