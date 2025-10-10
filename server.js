@@ -42,7 +42,6 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 app.use(express.static(path.join(__dirname, "public")));
 
 
-const PORT = process.env.PORT || 3000;
 
 // --- Tokens ---
 let access_token = process.env.SPOTIFY_ACCESS_TOKEN || "";
