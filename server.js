@@ -1,173 +1,180 @@
-// server.js
-require("dotenv").config();
-const express = require("express");
-const fetch = require("node-fetch");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const path = require("path");
+import express from "express";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
+dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
+app.use(express.json());
 app.use(cors());
-app.use(bodyParser.json());
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, "public")));
 
-// Spotify API Credentials
-const client_id = process.env.SPOTIFY_CLIENT_ID;
-const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-const redirect_uri = process.env.REDIRECT_URI || "http://localhost:3000/callback";
+const client_id = process.env.CLIENT_ID;
+const client_secret = process.env.CLIENT_SECRET;
+const redirect_uri = process.env.REDIRECT_URI;
 
-// Tokens
-let access_token = process.env.SPOTIFY_ACCESS_TOKEN || "";
-let refresh_token = process.env.SPOTIFY_REFRESH_TOKEN || "";
+let currentAccessToken = null;
+let currentRefreshToken = null;
 
-// --- Auth flow ---
+// 🔐 Spotify Login
 app.get("/login", (req, res) => {
-  const scopes = "user-modify-playback-state user-read-playback-state";
-  res.redirect(
-    `https://accounts.spotify.com/authorize?response_type=code&client_id=${client_id}&scope=${encodeURIComponent(
-      scopes
-    )}&redirect_uri=${encodeURIComponent(redirect_uri)}`
-  );
+  const scope = "user-read-playback-state user-modify-playback-state";
+  const authUrl =
+    "https://accounts.spotify.com/authorize?" +
+    new URLSearchParams({
+      response_type: "code",
+      client_id,
+      scope,
+      redirect_uri,
+    }).toString();
+
+  res.redirect(authUrl);
 });
 
+// 🔄 Callback von Spotify
 app.get("/callback", async (req, res) => {
   const code = req.query.code || null;
-
   const params = new URLSearchParams();
   params.append("code", code);
   params.append("redirect_uri", redirect_uri);
   params.append("grant_type", "authorization_code");
 
+  const headers = {
+    Authorization:
+      "Basic " +
+      Buffer.from(`${client_id}:${client_secret}`).toString("base64"),
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+
   try {
-    const result = await fetch("https://accounts.spotify.com/api/token", {
+    const response = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
-      headers: {
-        Authorization:
-          "Basic " +
-          Buffer.from(`${client_id}:${client_secret}`).toString("base64"),
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      headers,
       body: params,
     });
 
-    const data = await result.json();
-
-    access_token = data.access_token;
-    refresh_token = data.refresh_token;
-
-    // 🔒 Tokens persistent im Prozess speichern
-    process.env.SPOTIFY_ACCESS_TOKEN = access_token;
-    process.env.SPOTIFY_REFRESH_TOKEN = refresh_token;
+    const data = await response.json();
+    currentAccessToken = data.access_token;
+    currentRefreshToken = data.refresh_token;
 
     console.log("✅ Spotify verbunden!");
-    console.log("Access Token:", access_token);
-    console.log("Refresh Token:", refresh_token);
-
     res.redirect("/");
   } catch (err) {
-    console.error("Fehler beim Auth Callback:", err);
-    res.status(500).send("Fehler bei der Spotify-Verbindung");
+    console.error("Spotify Auth Fehler:", err);
+    res.status(500).send("Fehler bei der Spotify-Authentifizierung.");
   }
 });
 
-// --- Token Refresh ---
-async function refreshAccessToken() {
-  if (!refresh_token) {
-    console.error("❌ Kein Refresh Token vorhanden!");
-    return;
-  }
+// 🔁 Token aktualisieren
+app.get("/refresh_token", async (req, res) => {
+  if (!currentRefreshToken)
+    return res.status(400).json({ error: "Kein Refresh Token verfügbar." });
 
   const params = new URLSearchParams();
   params.append("grant_type", "refresh_token");
-  params.append("refresh_token", refresh_token);
+  params.append("refresh_token", currentRefreshToken);
+
+  const headers = {
+    Authorization:
+      "Basic " +
+      Buffer.from(`${client_id}:${client_secret}`).toString("base64"),
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
 
   try {
-    const result = await fetch("https://accounts.spotify.com/api/token", {
+    const response = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
-      headers: {
-        Authorization:
-          "Basic " +
-          Buffer.from(`${client_id}:${client_secret}`).toString("base64"),
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      headers,
       body: params,
     });
 
-    const data = await result.json();
+    const data = await response.json();
+    currentAccessToken = data.access_token;
 
-    if (data.access_token) {
-      access_token = data.access_token;
-      process.env.SPOTIFY_ACCESS_TOKEN = access_token;
-      console.log("🔁 Access Token erfolgreich erneuert");
-    } else {
-      console.error("Fehler beim Token-Refresh:", data);
-    }
+    console.log("♻️ Token aktualisiert");
+    res.json({ success: true });
   } catch (err) {
-    console.error("Token-Refresh fehlgeschlagen:", err);
+    console.error("Fehler beim Token-Refresh:", err);
+    res.status(500).json({ error: "Fehler beim Token-Refresh" });
   }
-}
+});
 
-// --- Songs suchen ---
+// 🔍 Live-Suche
 app.get("/search", async (req, res) => {
   const query = req.query.q;
-  if (!access_token) return res.status(401).json({ error: "Bitte Spotify erneut verbinden." });
+  if (!currentAccessToken)
+    return res.status(401).json({ error: "Bitte Spotify erneut verbinden." });
 
   try {
-    const result = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=5`, {
-      headers: { Authorization: "Bearer " + access_token },
-    });
-    const data = await result.json();
+    const response = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(
+        query
+      )}&type=track&limit=10`,
+      {
+        headers: { Authorization: `Bearer ${currentAccessToken}` },
+      }
+    );
 
-    if (data.error?.status === 401) {
-      await refreshAccessToken();
-      return res.status(401).json({ error: "Token erneuert, bitte erneut versuchen." });
+    const data = await response.json();
+    if (!data.tracks) {
+      return res.status(400).json({ error: "Ungültige Antwort von Spotify" });
     }
 
-    res.json(data.tracks.items || []);
+    res.json(data.tracks.items);
   } catch (err) {
-    console.error("Fehler bei /search:", err);
+    console.error("Fehler bei der Suche:", err);
     res.status(500).json({ error: "Fehler bei der Suche" });
   }
 });
 
-// --- Song zur Queue hinzufügen ---
+// 🎵 Song zur Queue hinzufügen
 app.post("/add-to-queue", async (req, res) => {
-  const { uri } = req.body;
-  if (!access_token) return res.status(401).json({ error: "Bitte Spotify erneut verbinden." });
-
   try {
-    const result = await fetch(`https://api.spotify.com/v1/me/player/queue?uri=${encodeURIComponent(uri)}`, {
-      method: "POST",
-      headers: { Authorization: "Bearer " + access_token },
-    });
+    const { uri } = req.body;
+    const access_token = currentAccessToken;
 
-    if (result.status === 401) {
-      await refreshAccessToken();
-      return res.status(401).json({ error: "Token erneuert, bitte erneut versuchen." });
+    if (!access_token) {
+      return res
+        .status(401)
+        .json({ error: "Bitte Spotify erneut verbinden." });
     }
 
-    if (result.status === 204) {
-      res.json({ success: true });
+    const response = await fetch(
+      `https://api.spotify.com/v1/me/player/queue?uri=${encodeURIComponent(uri)}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    if (response.status === 204) {
+      console.log("✅ Song erfolgreich hinzugefügt!");
+      return res.json({ success: true });
     } else {
-      const error = await result.json();
-      console.error("Fehler beim Hinzufügen:", error);
-      res.status(400).json({ error: "Fehler beim Hinzufügen zur Warteschlange." });
+      const data = await response.json().catch(() => null);
+      console.error("Fehler beim Hinzufügen:", data);
+      return res.status(400).json({
+        error: data?.error?.message || "Fehler beim Hinzufügen.",
+      });
     }
   } catch (err) {
-    console.error("Fehler bei /add-to-queue:", err);
-    res.status(500).json({ error: "Fehler beim Hinzufügen" });
+    console.error("Serverfehler:", err);
+    res.status(500).json({ error: "Interner Serverfehler" });
   }
 });
 
-// --- Homepage bereitstellen ---
+// 🏠 Frontend ausliefern
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// --- Server starten ---
-app.listen(PORT, () => {
-  console.log(`✅ Server läuft auf Port ${PORT}`);
-});
+// 🚀 Server starten
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server läuft auf Port ${PORT}`));
