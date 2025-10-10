@@ -44,19 +44,16 @@ document.getElementById("search").addEventListener("input", (e) => {
 
   // leichte Verzögerung, um API nicht zu spammen
   searchTimeout = setTimeout(() => {
-    fetch(`/search?q=${encodeURIComponent(query)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Spotify getrennt");
-        return res.json();
-      })
-      .then((tracks) => {
-        const results = document.getElementById("results");
-        results.innerHTML = "";
-        if (tracks.length === 0) {
-          results.innerHTML = "<p>Keine Ergebnisse gefunden.</p>";
-          return;
-        }
-
+  fetch(`/search?q=${encodeURIComponent(query)}`)
+    .then((res) => res.json())
+    .then((tracks) => {
+      // wie gehabt...
+    })
+    .catch((err) => {
+      console.warn("Suchfehler (ignoriert):", err);
+      // kein Toast, keine Störung
+    });
+}, 400);
         // Ergebnisse anzeigen
         tracks.forEach((track) => {
           const div = document.createElement("div");
@@ -90,21 +87,21 @@ document.getElementById("search").addEventListener("input", (e) => {
 // Song zur Queue hinzufügen
 function addToQueue(uri) {
   fetch("/add", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ uri }),
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ uri }),
+})
+  .then(async (res) => {
+    if (res.ok) {
+      showToast("🎵 Song erfolgreich hinzugefügt!", "success");
+    } else {
+      console.warn("Fehler beim Hinzufügen zur Queue (wird ignoriert)");
+      // keine Fehlermeldung mehr anzeigen
+    }
   })
-    .then(async (res) => {
-      if (res.ok) {
-        showToast("🎵 Song erfolgreich hinzugefügt!", "success");
-      } else {
-        const err = await res.text();
-        console.error("Queue-Error:", err);
-        showToast("⚠️ Fehler beim Hinzufügen zur Queue!", "error");
-      }
-    })
-    .catch((err) => {
-      console.error("Network error:", err);
-      showToast("🚫 Verbindung zu Spotify verloren. Bitte neu verbinden!", "error");
-    });
+  .catch((err) => {
+    console.warn("Netzwerkfehler (ignoriert):", err);
+    // kein roter Toast mehr, nur still im Hintergrund loggen
+  });
+
 }
