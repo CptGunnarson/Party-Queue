@@ -1,9 +1,22 @@
 // --- Spotify Party Queue Frontend ---
-// Live-Suche + Toast-Bestätigung beim Hinzufügen
+// Live-Suche, Toast-Bestätigung & automatischer Login
 
 let searchTimeout;
 
-// === Toast-Funktion (transparent, oben, mit sanftem Fade) ===
+// === Automatischer Spotify-Login, falls keine Verbindung ===
+window.addEventListener("load", () => {
+  fetch("/device-status")
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data.connected) {
+        console.log("Kein Spotify verbunden — leite weiter zu Login");
+        window.location.href = "/login";
+      }
+    })
+    .catch((err) => console.error("Login-Check Fehler:", err));
+});
+
+// === Toast-Funktion (transparent, oben, mit Fade) ===
 function showToast(message) {
   const toast = document.createElement("div");
   toast.textContent = message;
@@ -12,7 +25,7 @@ function showToast(message) {
     top: "20px",
     left: "50%",
     transform: "translateX(-50%)",
-    background: "rgba(29,185,84,0.92)", // halbtransparentes Spotify-Grün
+    background: "rgba(29,185,84,0.92)",
     color: "#fff",
     padding: "14px 28px",
     borderRadius: "10px",
@@ -26,13 +39,11 @@ function showToast(message) {
 
   document.body.appendChild(toast);
 
-  // sanft einblenden
   requestAnimationFrame(() => {
     toast.style.opacity = "1";
     toast.style.transform = "translate(-50%, 0)";
   });
 
-  // nach 3s ausblenden
   setTimeout(() => {
     toast.style.opacity = "0";
     toast.style.transform = "translate(-50%, -20px)";
@@ -48,14 +59,18 @@ async function checkStatus() {
 
     const dot = document.getElementById("statusDot");
     const text = document.getElementById("statusText");
+    const loginBtn = document.getElementById("loginBtn");
 
     if (!dot || !text) return;
 
     if (!data.connected) {
       dot.className = "dot offline";
       text.textContent = "Spotify getrennt";
+      if (loginBtn) loginBtn.style.display = "inline";
       return;
     }
+
+    if (loginBtn) loginBtn.style.display = "none";
 
     if (data.deviceActive) {
       dot.className = "dot online";
@@ -71,7 +86,7 @@ async function checkStatus() {
 checkStatus();
 setInterval(checkStatus, 15000);
 
-// === Suche ===
+// === Live-Suche ===
 document.getElementById("search").addEventListener("input", (e) => {
   clearTimeout(searchTimeout);
   const query = e.target.value.trim();
@@ -121,18 +136,11 @@ async function addToQueue(uri) {
     });
 
     // Spotify gibt 204 (kein Inhalt) oder 200 bei Erfolg
-    if (res.status === 200 || res.status === 204) {
+    if (res.status === 200 || res.status === 204 || res.status === 400) {
       showToast("🎵 Song hinzugefügt!");
       return;
     }
 
-    // Wenn 400 → meist kein aktives Gerät
-    if (res.status === 400) {
-      showToast("🎵 Song hinzugefügt!");
-      return;
-    }
-
-    // Alle anderen Fehler nur loggen
     const errText = await res.text();
     console.warn("Fehler beim Hinzufügen:", res.status, errText);
   } catch (err) {
