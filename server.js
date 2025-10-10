@@ -19,7 +19,6 @@ if (!process.env.REDIRECT_URI) {
   process.env.REDIRECT_URI = "https://party-queue-5yzw.onrender.com/callback";
 }
 
-// Debug-Ausgabe zum Überprüfen
 console.log("Server startet...");
 console.log(
   "SPOTIFY_CLIENT_ID:",
@@ -41,8 +40,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 
-let access_token = "";
-let refresh_token = "";
+let access_token = process.env.SPOTIFY_ACCESS_TOKEN || "";
+let refresh_token = process.env.SPOTIFY_REFRESH_TOKEN || "";
 
 // --- Spotify Login ---
 app.get("/login", (req, res) => {
@@ -56,7 +55,6 @@ app.get("/login", (req, res) => {
     encodeURIComponent(scopes) +
     "&redirect_uri=" +
     encodeURIComponent(process.env.REDIRECT_URI);
-
   console.log("Redirecting to:", authUrl);
   res.redirect(authUrl);
 });
@@ -85,17 +83,30 @@ app.get("/callback", async (req, res) => {
     });
 
     const data = await response.json();
+
     if (data.error) {
       console.error("Spotify Auth Error:", data);
-      return res.status(400).send("Spotify-Authentifizierung fehlgeschlagen.");
+      return res
+        .status(400)
+        .send(
+          "Spotify-Authentifizierung fehlgeschlagen: " +
+            (data.error_description || data.error)
+        );
     }
 
     access_token = data.access_token;
     refresh_token = data.refresh_token;
-    console.log("Spotify erfolgreich verbunden!");
+
+    console.log("Spotify verbunden!");
+    console.log("Access Token:", access_token?.substring(0, 20) + "...");
+    console.log("Refresh Token:", refresh_token?.substring(0, 20) + "...");
+    console.log("\n👉 Diese Tokens kannst du in Render speichern:");
+    console.log("SPOTIFY_ACCESS_TOKEN=" + access_token);
+    console.log("SPOTIFY_REFRESH_TOKEN=" + refresh_token + "\n");
+
     res.redirect("/");
   } catch (err) {
-    console.error(err);
+    console.error("Fehler im Callback:", err);
     res.status(500).send("Fehler bei der Spotify-Verbindung.");
   }
 });
