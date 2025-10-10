@@ -3,182 +3,180 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spotify Party Queue 🎶</title>
+    <title>Spotify Party Queue</title>
     <style>
+      * {
+        box-sizing: border-box;
+        font-family: "Arial", sans-serif;
+      }
       body {
-        font-family: "Inter", sans-serif;
+        margin: 0;
         background-color: #000;
-        color: #fff;
-        text-align: center;
-        padding: 30px;
-      }
-
-      h1 {
-        font-size: 2rem;
-        margin-bottom: 10px;
-        color: #1db954;
-      }
-
-      p {
-        color: #aaa;
-      }
-
-      #search {
-        width: 90%;
-        max-width: 400px;
-        padding: 12px;
-        border: 2px solid #1db954;
-        border-radius: 8px;
-        font-size: 1rem;
-        background-color: #111;
         color: white;
-        margin-top: 20px;
-      }
-
-      #search:focus {
-        outline: none;
-        border-color: #1ed760;
-      }
-
-      #results {
-        margin-top: 25px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 12px;
+        padding: 30px;
       }
-
-      .track {
-        background: #111;
-        border: 1px solid #1db95433;
-        border-radius: 10px;
-        padding: 10px;
+      h1 {
+        color: #1db954;
+        margin-bottom: 15px;
+      }
+      input {
         width: 90%;
-        max-width: 420px;
+        max-width: 400px;
+        padding: 12px 14px;
+        border: none;
+        border-radius: 30px;
+        font-size: 16px;
+        background-color: #282828;
+        color: white;
+        outline: none;
+      }
+      #results {
+        width: 100%;
+        max-width: 500px;
+        margin-top: 20px;
+      }
+      .track {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        transition: transform 0.15s ease;
+        padding: 10px 15px;
+        background-color: #181818;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        transition: background 0.2s ease;
       }
-
       .track:hover {
-        transform: scale(1.02);
+        background-color: #282828;
       }
-
       .track img {
-        width: 55px;
-        height: 55px;
-        border-radius: 6px;
+        width: 50px;
+        height: 50px;
+        border-radius: 5px;
+        margin-right: 15px;
       }
-
       .track-info {
-        text-align: left;
         flex: 1;
-        margin-left: 12px;
+        display: flex;
+        flex-direction: column;
       }
-
       .track-info strong {
-        color: #fff;
+        font-size: 16px;
       }
-
       .track-info div {
-        font-size: 0.9rem;
+        font-size: 14px;
         color: #aaa;
       }
-
-      .track button {
-        background: #1db954;
+      button {
+        background-color: #1db954;
         border: none;
-        padding: 10px 15px;
-        border-radius: 8px;
         color: white;
+        font-size: 20px;
         font-weight: bold;
+        padding: 5px 12px;
+        border-radius: 50%;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: background 0.2s ease;
+      }
+      button:hover {
+        background-color: #1ed760;
       }
 
-      .track button:hover {
-        background: #17a84b;
-      }
-
-      #message {
-        margin-top: 25px;
-        color: #ff4d4d;
+      /* Toast-Stil */
+      #toast {
+        position: fixed;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1db954;
+        color: white;
+        padding: 14px 24px;
+        border-radius: 30px;
         font-weight: bold;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      #toast.show {
+        opacity: 1;
       }
     </style>
   </head>
   <body>
     <h1>🎉 Spotify Party Queue</h1>
-    <p>Suche nach Songs und füge sie deiner Party-Warteschlange hinzu!</p>
-
-    <input
-      type="text"
-      id="search"
-      placeholder="Song oder Künstler eingeben..."
-      autocomplete="off"
-    />
-
+    <input id="search" type="text" placeholder="Song oder Künstler suchen..." />
     <div id="results"></div>
-    <div id="message"></div>
+
+    <div id="toast"></div>
 
     <script>
       const searchInput = document.getElementById("search");
       const resultsDiv = document.getElementById("results");
-      const messageDiv = document.getElementById("message");
-      let timeout = null;
+      const toast = document.getElementById("toast");
 
-      // 🔁 Auto-Refresh alle 60 Sekunden (damit UI aktuell bleibt)
-      setInterval(() => {
-        if (searchInput.value.trim().length > 0) {
-          triggerSearch();
-        }
-      }, 60000);
+      function showToast(message, color = "#1db954") {
+        toast.textContent = message;
+        toast.style.background = color;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 2500);
+      }
 
-      // 🔎 Live-Suche beim Tippen
+      // --- Live-Suche ---
+      let searchTimeout;
       searchInput.addEventListener("input", () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => triggerSearch(), 400);
-      });
-
-      function triggerSearch() {
-        const query = searchInput.value.trim();
-        if (!query) {
+        clearTimeout(searchTimeout);
+        const q = searchInput.value.trim();
+        if (!q) {
           resultsDiv.innerHTML = "";
           return;
         }
+        searchTimeout = setTimeout(() => {
+          fetch(`/search?q=${encodeURIComponent(q)}`)
+            .then((res) => {
+              if (!res.ok) throw new Error("not connected");
+              return res.json();
+            })
+            .then((tracks) => {
+              resultsDiv.innerHTML = "";
+              if (!tracks.length) {
+                resultsDiv.innerHTML =
+                  "<p>Keine Ergebnisse gefunden.</p>";
+                return;
+              }
 
-        fetch(`/search?q=${encodeURIComponent(query)}`)
-          .then((res) => res.json())
-          .then((tracks) => {
-            if (tracks.error) {
-              showMessage(tracks.error);
-              return;
-            }
-
-            resultsDiv.innerHTML = "";
-            tracks.forEach((track) => {
-              const div = document.createElement("div");
-              div.className = "track";
-              div.innerHTML = `
-                <img src="${track.album.images[0]?.url || ""}" alt="cover">
-                <div class="track-info">
-                  <strong>${track.name}</strong>
-                  <div>${track.artists.map((a) => a.name).join(", ")}</div>
-                </div>
-                <button data-uri="${track.uri}">+</button>
-              `;
-              resultsDiv.appendChild(div);
+              tracks.forEach((track) => {
+                const div = document.createElement("div");
+                div.className = "track";
+                div.innerHTML = `
+                  <img src="${
+                    track.album.images[0]?.url || ""
+                  }" alt="Cover" />
+                  <div class="track-info">
+                    <strong>${track.name}</strong>
+                    <div>${track.artists
+                      .map((a) => a.name)
+                      .join(", ")}</div>
+                  </div>
+                  <button data-uri="${track.uri}">+</button>
+                `;
+                resultsDiv.appendChild(div);
+              });
+            })
+            .catch(() => {
+              showToast("Bitte Spotify erneut verbinden.", "#d9534f");
+              setTimeout(() => (window.location.href = "/login"), 2000);
             });
-          })
-          .catch(() => showMessage("Fehler bei der Suche."));
-      }
+        }, 400);
+      });
 
-      // ➕ Song zur Queue hinzufügen
+      // --- Song hinzufügen ---
       resultsDiv.addEventListener("click", (e) => {
         if (e.target.tagName === "BUTTON") {
           const uri = e.target.getAttribute("data-uri");
-         fetch("/add", {
+          fetch("/add", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ uri }),
@@ -186,116 +184,20 @@
             .then((res) => res.json())
             .then((data) => {
               if (data.success) {
-                showMessage("✅ Song wurde hinzugefügt!");
-              } else if (data.error) {
-                showMessage("⚠️ " + data.error);
-                if (data.error.includes("verbinden")) {
-                  setTimeout(() => {
-                    window.location.href = "/login";
-                  }, 2000);
-                }
+                showToast("✅ Song wurde hinzugefügt!");
+                const card = e.target.closest(".track");
+                card.style.background = "#1db95433";
+                setTimeout(() => (card.style.background = "#181818"), 800);
+              } else {
+                showToast("Bitte Spotify erneut verbinden.", "#d9534f");
+                setTimeout(() => (window.location.href = "/login"), 2000);
               }
             })
-            .catch(() => showMessage("Fehler beim Hinzufügen."));
+            .catch(() =>
+              showToast("Fehler beim Hinzufügen.", "#d9534f")
+            );
         }
       });
-
-      function showMessage(msg) {
-        messageDiv.textContent = msg;
-        setTimeout(() => (messageDiv.textContent = ""), 4000);
-      }
-    <script>
-  const searchInput = document.getElementById("search");
-  const resultsDiv = document.getElementById("results");
-
-  // --- Toast-Nachricht erstellen ---
-  const toast = document.createElement("div");
-  toast.style.position = "fixed";
-  toast.style.bottom = "40px";
-  toast.style.left = "50%";
-  toast.style.transform = "translateX(-50%)";
-  toast.style.background = "#1db954";
-  toast.style.color = "white";
-  toast.style.padding = "14px 20px";
-  toast.style.borderRadius = "10px";
-  toast.style.fontWeight = "bold";
-  toast.style.opacity = "0";
-  toast.style.transition = "opacity 0.4s ease";
-  document.body.appendChild(toast);
-
-  function showToast(message) {
-    toast.textContent = message;
-    toast.style.opacity = "1";
-    setTimeout(() => {
-      toast.style.opacity = "0";
-    }, 2500);
-  }
-
-  // --- Live-Suche ---
-  let timeout = null;
-  searchInput.addEventListener("input", () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(triggerSearch, 400);
-  });
-
-  function triggerSearch() {
-    const query = searchInput.value.trim();
-    if (!query) {
-      resultsDiv.innerHTML = "";
-      return;
-    }
-
-    fetch(`/search?q=${encodeURIComponent(query)}`)
-      .then((res) => res.json())
-      .then((tracks) => {
-        resultsDiv.innerHTML = "";
-        if (!tracks.length) {
-          resultsDiv.innerHTML = "<p>Keine Ergebnisse gefunden.</p>";
-          return;
-        }
-
-        tracks.forEach((track) => {
-          const div = document.createElement("div");
-          div.className = "track";
-          div.innerHTML = `
-            <img src="${track.album.images[0]?.url || ""}" alt="cover">
-            <div class="track-info">
-              <strong>${track.name}</strong>
-              <div>${track.artists.map((a) => a.name).join(", ")}</div>
-            </div>
-            <button data-uri="${track.uri}">+</button>
-          `;
-          resultsDiv.appendChild(div);
-        });
-      })
-      .catch(() => showToast("Fehler bei der Suche."));
-  }
-
-  // --- Song hinzufügen ---
-  resultsDiv.addEventListener("click", (e) => {
-    if (e.target.tagName === "BUTTON") {
-      const uri = e.target.getAttribute("data-uri");
-      fetch("/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uri }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            showToast("✅ Song wurde hinzugefügt!");
-          } else {
-            showToast("⚠️ Bitte Spotify erneut verbinden.");
-            setTimeout(() => {
-              window.location.href = "/login";
-            }, 2000);
-          }
-        })
-        .catch(() => showToast("Fehler beim Hinzufügen."));
-    }
-  });
-</script>
-
-
+    </script>
   </body>
 </html>
