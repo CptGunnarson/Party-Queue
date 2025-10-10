@@ -2,282 +2,122 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Spotify Party Queue 🎶</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify Party 🎶</title>
     <style>
-      :root {
-        --spotify-green: #1db954;
-        --spotify-green-light: #1ed760;
-        --spotify-bg: #121212;
-        --spotify-card: #181818;
-        --spotify-hover: #282828;
-        --text-light: #ffffff;
-        --text-muted: #aaaaaa;
-      }
-
-      * {
-        box-sizing: border-box;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      }
-
       body {
+        background-color: #121212;
+        color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         margin: 0;
-        background-color: var(--spotify-bg);
-        color: var(--text-light);
+        padding: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 16px;
         min-height: 100vh;
       }
-
-      h1 {
-        color: var(--spotify-green);
-        font-size: 1.6rem;
+      header {
+        padding: 20px;
         text-align: center;
-        margin-bottom: 16px;
-        margin-top: 12px;
+        color: #1db954;
+        font-size: 1.8rem;
       }
-
-      input {
-        width: 100%;
-        max-width: 500px;
-        padding: 14px 18px;
+      #search {
+        width: 90%;
+        max-width: 400px;
+        padding: 12px;
+        border-radius: 8px;
         border: none;
-        border-radius: 30px;
-        font-size: 16px;
-        background-color: var(--spotify-card);
-        color: var(--text-light);
-        outline: none;
-        text-align: center;
-        transition: background 0.2s;
+        margin: 10px 0;
+        font-size: 1rem;
       }
-
-      input:focus {
-        background-color: var(--spotify-hover);
-      }
-
       #results {
-        width: 100%;
-        max-width: 500px;
-        margin-top: 20px;
+        width: 90%;
+        max-width: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
       }
-
       .track {
+        background: #181818;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 12px;
-        background-color: var(--spotify-card);
-        border-radius: 12px;
-        margin-bottom: 10px;
+        padding: 10px 14px;
         transition: background 0.2s;
       }
-
       .track:hover {
-        background-color: var(--spotify-hover);
+        background: #282828;
       }
-
-      .track img {
-        width: 50px;
-        height: 50px;
-        border-radius: 6px;
-        flex-shrink: 0;
-      }
-
       .track-info {
         flex: 1;
-        display: flex;
-        flex-direction: column;
-        margin: 0 10px;
-        overflow: hidden;
+        margin-right: 10px;
       }
-
-      .track-info strong {
-        font-size: 15px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      .track-name {
+        font-weight: bold;
+        font-size: 0.95rem;
       }
-
-      .track-info div {
-        font-size: 13px;
-        color: var(--text-muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      .track-artist {
+        font-size: 0.8rem;
+        color: #bbb;
       }
-
       button {
-        background-color: var(--spotify-green);
-        border: none;
+        background-color: #1db954;
         color: white;
-        font-size: 22px;
-        padding: 6px 12px;
-        border-radius: 50%;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
         cursor: pointer;
-        flex-shrink: 0;
-        transition: transform 0.15s ease, background-color 0.2s;
+        transition: background 0.2s;
       }
-
       button:hover {
-        background-color: var(--spotify-green-light);
-        transform: scale(1.1);
+        background-color: #1ed760;
       }
-
-      #toast {
+      .toast {
         position: fixed;
-        bottom: 25px;
+        bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        background: var(--spotify-green);
-        color: white;
-        padding: 14px 24px;
-        border-radius: 30px;
+        padding: 12px 20px;
+        border-radius: 8px;
         font-weight: bold;
-        font-size: 14px;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        max-width: 80%;
-        text-align: center;
-        z-index: 999;
+        color: #fff;
+        z-index: 1000;
+        animation: fadeInOut 3s ease forwards;
       }
-
-      #toast.show {
-        opacity: 1;
+      .toast.success {
+        background-color: #1db954;
       }
-
-      @media (hover: none) and (pointer: coarse) {
-        /* Verbesserungen für Touchgeräte */
-        button {
-          font-size: 26px;
-          padding: 10px 14px;
+      .toast.error {
+        background-color: #e22134;
+      }
+      @keyframes fadeInOut {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, 20px);
         }
-
-        .track img {
-          width: 60px;
-          height: 60px;
+        10%,
+        90% {
+          opacity: 1;
+          transform: translate(-50%, 0);
         }
-
-        input {
-          font-size: 18px;
-          padding: 16px 20px;
+        100% {
+          opacity: 0;
+          transform: translate(-50%, 20px);
         }
       }
     </style>
   </head>
   <body>
-    <h1>🎉 Spotify Party Queue</h1>
-    <input id="search" type="text" placeholder="Song oder Künstler suchen..." />
+    <header>🎉 Spotify Party</header>
+
+    <input type="text" id="search" placeholder="Song oder Künstler eingeben..." />
+
     <div id="results"></div>
-    <div id="toast"></div>
 
-    <script>
-      const searchInput = document.getElementById("search");
-      const resultsDiv = document.getElementById("results");
-      const toast = document.getElementById("toast");
-
-      function showToast(message, color = "#1db954") {
-        toast.textContent = message;
-        toast.style.background = color;
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 2500);
-      }
-
-      // --- Live-Suche ---
-      let searchTimeout;
-      searchInput.addEventListener("input", () => {
-        clearTimeout(searchTimeout);
-        const q = searchInput.value.trim();
-        if (!q) {
-          resultsDiv.innerHTML = "";
-          return;
-        }
-        searchTimeout = setTimeout(() => {
-          resultsDiv.innerHTML = "<p style='text-align:center;color:#aaa'>⏳ Suche läuft...</p>";
-          fetch(window.location.origin + `/search?q=${encodeURIComponent(q)}`)
-            .then((res) => {
-              if (!res.ok) throw new Error("not connected");
-              return res.json();
-            })
-            .then((tracks) => {
-              resultsDiv.innerHTML = "";
-              if (!tracks.length) {
-                resultsDiv.innerHTML = "<p style='text-align:center;color:#aaa'>Keine Ergebnisse gefunden.</p>";
-                return;
-              }
-              tracks.forEach((track) => {
-                const div = document.createElement("div");
-                div.className = "track";
-                div.innerHTML = `
-                  <img src="${track.album.images[0]?.url || ""}" alt="Cover" />
-                  <div class="track-info">
-                    <strong>${track.name}</strong>
-                    <div>${track.artists.map((a) => a.name).join(", ")}</div>
-                  </div>
-                  <button data-uri="${track.uri}">+</button>
-                `;
-                resultsDiv.appendChild(div);
-              });
-            })
-            .catch(() => {
-              showToast("Spotify getrennt oder Token ungültig", "#d9534f");
-            });
-        }, 400);
-      });
-
-      // --- Song hinzufügen ---
-      resultsDiv.addEventListener("click", (e) => {
-        if (e.target.tagName === "BUTTON") {
-          const uri = e.target.getAttribute("data-uri");
-          fetch("/add", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ uri }),
-          })
-            .then(async (res) => {
-              const data = await res.json().catch(() => ({}));
-              if (res.ok && data.success) {
-                showToast("✅ Song wurde hinzugefügt!");
-                e.target.style.background = "#555";
-                setTimeout(() => (e.target.style.background = "#1db954"), 700);
-              } else {
-                showToast(data?.error || "Fehler beim Hinzufügen", "#d9534f");
-              }
-            })
-            .catch(() => showToast("Fehler beim Hinzufügen", "#d9534f"));
-        }
-      });
-    </script>
-      <div id="offline-banner" 
-         style="display:none;position:fixed;top:0;left:0;width:100%;
-                background:#d9534f;color:white;text-align:center;
-                padding:10px;font-weight:bold;z-index:1000;">
-      ⚠️ Verbindung getrennt – versuche, wieder online zu gehen...
-    </div>
-
-    <script>
-      // --- Offline-Status prüfen ---
-      function updateOnlineStatus() {
-        const banner = document.getElementById("offline-banner");
-        if (!navigator.onLine) {
-          banner.style.display = "block";
-        } else {
-          banner.style.display = "none";
-        }
-      }
-      window.addEventListener("online", updateOnlineStatus);
-      window.addEventListener("offline", updateOnlineStatus);
-      updateOnlineStatus();
-
-      // --- Service Worker registrieren ---
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("/service-worker.js")
-          .then(() => console.log("🛰️ Service Worker aktiv"))
-          .catch((err) => console.warn("SW Fehler:", err));
-      }
-    </script>
-</body>
+    <script src="/script.js"></script>
+  </body>
 </html>

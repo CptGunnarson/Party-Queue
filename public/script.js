@@ -1,78 +1,88 @@
-const input = document.getElementById("searchInput");
-const results = document.getElementById("results");
-const statusBox = document.getElementById("status");
+// --- Live-Suche mit Spotify + Toast Feedback ---
 
-let searchTimeout = null;
+let searchTimeout;
 
-// --- Live-Suche ---
-input.addEventListener("input", () => {
-  const query = input.value.trim();
+// Toast-Funktion (für Erfolg / Fehler)
+function showToast(message, type = "info") {
+  const toast = document.createElement("div");
+  toast.textContent = message;
+  toast.className = "toast " + type;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// Suche bei Eingabe
+document.getElementById("search").addEventListener("input", (e) => {
   clearTimeout(searchTimeout);
-  if (query.length < 2) {
-    results.innerHTML = "";
+  const query = e.target.value.trim();
+  if (!query) {
+    document.getElementById("results").innerHTML = "";
     return;
   }
 
-  searchTimeout = setTimeout(async () => {
-    try {
-      const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
-      if (!res.ok) {
-        throw new Error("Bitte Spotify erneut verbinden.");
-      }
+  // leichte Verzögerung, um API nicht zu spammen
+  searchTimeout = setTimeout(() => {
+    fetch(`/search?q=${encodeURIComponent(query)}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Spotify getrennt");
+        return res.json();
+      })
+      .then((tracks) => {
+        const results = document.getElementById("results");
+        results.innerHTML = "";
+        if (tracks.length === 0) {
+          results.innerHTML = "<p>Keine Ergebnisse gefunden.</p>";
+          return;
+        }
 
-      const data = await res.json();
-      results.innerHTML = "";
+        // Ergebnisse anzeigen
+        tracks.forEach((track) => {
+          const div = document.createElement("div");
+          div.className = "track";
 
-      data.forEach((track) => {
-        const li = document.createElement("li");
-        li.className =
-          "flex justify-between items-center bg-gray-800 rounded-lg p-3 hover:bg-gray-700";
-        li.innerHTML = `
-          <div>
-            <div class="font-semibold">${track.name}</div>
-            <div class="text-sm text-gray-400">${track.artists
+          const info = document.createElement("div");
+          info.className = "track-info";
+          info.innerHTML = `
+            <div class="track-name">${track.name}</div>
+            <div class="track-artist">${track.artists
               .map((a) => a.name)
               .join(", ")}</div>
-          </div>
-          <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded add-btn">
-            ➕
-          </button>
-        `;
-        li.querySelector(".add-btn").addEventListener("click", async () => {
-          await addToQueue(track.uri);
+          `;
+
+          const button = document.createElement("button");
+          button.textContent = "Hinzufügen";
+          button.onclick = () => addToQueue(track.uri);
+
+          div.appendChild(info);
+          div.appendChild(button);
+          results.appendChild(div);
         });
-        results.appendChild(li);
+      })
+      .catch((err) => {
+        console.error(err);
+        showToast("🚫 Verbindung zu Spotify verloren. Bitte neu verbinden!", "error");
       });
-    } catch (err) {
-      showStatus(err.message, true);
-    }
-  }, 400); // kleine Verzögerung für Live-Suche
+  }, 400);
 });
 
-// --- Song hinzufügen ---
-fetch("/add", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ uri: track.uri }),
-})
-  .then(async (res) => {
-    if (res.ok) {
-      showToast("🎵 Song erfolgreich hinzugefügt!", "success");
-    } else {
-      const err = await res.text();
-      console.error("Queue-Error:", err);
-      showToast("⚠️ Fehler beim Hinzufügen zur Queue!", "error");
-    }
+// Song zur Queue hinzufügen
+function addToQueue(uri) {
+  fetch("/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uri }),
   })
-  .catch((err) => {
-    console.error("Network error:", err);
-    showToast("🚫 Verbindung zu Spotify verloren. Bitte neu verbinden!", "error");
-  });
-
-// --- Statusmeldung ---
-function showStatus(message, error = false) {
-  statusBox.textContent = message;
-  statusBox.classList.remove("hidden");
-  statusBox.style.backgroundColor = error ? "#dc2626" : "#16a34a";
-  setTimeout(() => statusBox.classList.add("hidden"), 3000);
+    .then(async (res) => {
+      if (res.ok) {
+        showToast("🎵 Song erfolgreich hinzugefügt!", "success");
+      } else {
+        const err = await res.text();
+        console.error("Queue-Error:", err);
+        showToast("⚠️ Fehler beim Hinzufügen zur Queue!", "error");
+      }
+    })
+    .catch((err) => {
+      console.error("Network error:", err);
+      showToast("🚫 Verbindung zu Spotify verloren. Bitte neu verbinden!", "error");
+    });
 }
