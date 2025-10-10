@@ -7,8 +7,8 @@
     <style>
       body {
         font-family: "Inter", sans-serif;
-        background: linear-gradient(135deg, #191414, #1db954);
-        color: white;
+        background-color: #000;
+        color: #fff;
         text-align: center;
         padding: 30px;
       }
@@ -16,58 +16,85 @@
       h1 {
         font-size: 2rem;
         margin-bottom: 10px;
+        color: #1db954;
+      }
+
+      p {
+        color: #aaa;
       }
 
       #search {
         width: 90%;
         max-width: 400px;
-        padding: 10px;
-        border: none;
+        padding: 12px;
+        border: 2px solid #1db954;
         border-radius: 8px;
         font-size: 1rem;
+        background-color: #111;
+        color: white;
         margin-top: 20px;
+      }
+
+      #search:focus {
+        outline: none;
+        border-color: #1ed760;
       }
 
       #results {
-        margin-top: 20px;
+        margin-top: 25px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
       }
 
       .track {
-        background: rgba(255, 255, 255, 0.1);
+        background: #111;
+        border: 1px solid #1db95433;
         border-radius: 10px;
         padding: 10px;
         width: 90%;
-        max-width: 400px;
+        max-width: 420px;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        transition: transform 0.15s ease;
+      }
+
+      .track:hover {
+        transform: scale(1.02);
       }
 
       .track img {
-        width: 50px;
-        height: 50px;
-        border-radius: 5px;
+        width: 55px;
+        height: 55px;
+        border-radius: 6px;
       }
 
       .track-info {
         text-align: left;
         flex: 1;
-        margin-left: 10px;
+        margin-left: 12px;
+      }
+
+      .track-info strong {
+        color: #fff;
+      }
+
+      .track-info div {
+        font-size: 0.9rem;
+        color: #aaa;
       }
 
       .track button {
         background: #1db954;
         border: none;
-        padding: 10px 14px;
+        padding: 10px 15px;
         border-radius: 8px;
         color: white;
         font-weight: bold;
         cursor: pointer;
-        transition: background 0.3s;
+        transition: background 0.2s;
       }
 
       .track button:hover {
@@ -75,8 +102,8 @@
       }
 
       #message {
-        margin-top: 20px;
-        color: #ffdddd;
+        margin-top: 25px;
+        color: #ff4d4d;
         font-weight: bold;
       }
     </style>
@@ -99,46 +126,53 @@
       const searchInput = document.getElementById("search");
       const resultsDiv = document.getElementById("results");
       const messageDiv = document.getElementById("message");
-
       let timeout = null;
+
+      // 🔁 Auto-Refresh alle 60 Sekunden (damit UI aktuell bleibt)
+      setInterval(() => {
+        if (searchInput.value.trim().length > 0) {
+          triggerSearch();
+        }
+      }, 60000);
 
       // 🔎 Live-Suche beim Tippen
       searchInput.addEventListener("input", () => {
         clearTimeout(timeout);
-        const query = searchInput.value.trim();
+        timeout = setTimeout(() => triggerSearch(), 400);
+      });
 
+      function triggerSearch() {
+        const query = searchInput.value.trim();
         if (!query) {
           resultsDiv.innerHTML = "";
           return;
         }
 
-        timeout = setTimeout(() => {
-          fetch(`/search?q=${encodeURIComponent(query)}`)
-            .then((res) => res.json())
-            .then((tracks) => {
-              if (tracks.error) {
-                showMessage(tracks.error);
-                return;
-              }
+        fetch(`/search?q=${encodeURIComponent(query)}`)
+          .then((res) => res.json())
+          .then((tracks) => {
+            if (tracks.error) {
+              showMessage(tracks.error);
+              return;
+            }
 
-              resultsDiv.innerHTML = "";
-              tracks.forEach((track) => {
-                const div = document.createElement("div");
-                div.className = "track";
-                div.innerHTML = `
-                  <img src="${track.album.images[0]?.url || ""}" alt="cover">
-                  <div class="track-info">
-                    <div><strong>${track.name}</strong></div>
-                    <div>${track.artists.map((a) => a.name).join(", ")}</div>
-                  </div>
-                  <button data-uri="${track.uri}">+</button>
-                `;
-                resultsDiv.appendChild(div);
-              });
-            })
-            .catch(() => showMessage("Fehler bei der Suche."));
-        }, 400);
-      });
+            resultsDiv.innerHTML = "";
+            tracks.forEach((track) => {
+              const div = document.createElement("div");
+              div.className = "track";
+              div.innerHTML = `
+                <img src="${track.album.images[0]?.url || ""}" alt="cover">
+                <div class="track-info">
+                  <strong>${track.name}</strong>
+                  <div>${track.artists.map((a) => a.name).join(", ")}</div>
+                </div>
+                <button data-uri="${track.uri}">+</button>
+              `;
+              resultsDiv.appendChild(div);
+            });
+          })
+          .catch(() => showMessage("Fehler bei der Suche."));
+      }
 
       // ➕ Song zur Queue hinzufügen
       resultsDiv.addEventListener("click", (e) => {
@@ -158,7 +192,7 @@
                 if (data.error.includes("verbinden")) {
                   setTimeout(() => {
                     window.location.href = "/login";
-                  }, 1500);
+                  }, 2000);
                 }
               }
             })
