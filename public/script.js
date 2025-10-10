@@ -10,6 +10,28 @@ function showToast(message, type = "info") {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }
+// Spotify-Verbindungsstatus prüfen
+async function checkStatus() {
+  try {
+    const res = await fetch("/status");
+    const data = await res.json();
+    const dot = document.getElementById("statusDot");
+    const text = document.getElementById("statusText");
+    if (data.connected) {
+      dot.className = "dot online";
+      text.textContent = "Spotify verbunden";
+    } else {
+      dot.className = "dot offline";
+      text.textContent = "Nicht verbunden";
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// alle 30 Sekunden prüfen
+checkStatus();
+setInterval(checkStatus, 30000);
 
 // Suche bei Eingabe
 document.getElementById("search").addEventListener("input", (e) => {

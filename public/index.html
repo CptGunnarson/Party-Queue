@@ -108,11 +108,37 @@
           opacity: 0;
           transform: translate(-50%, 20px);
         }
+#status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: -10px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: gray;
+}
+.dot.online {
+  background-color: #1db954;
+}
+.dot.offline {
+  background-color: #e22134;
+}
+
       }
     </style>
   </head>
   <body>
-    <header>🎉 Spotify Party</header>
+    <header>🎉 Spotify Warteschlange</header>
+ <div id="status">
+    <span id="statusDot" class="dot"></span>
+    <span id="statusText">Verbindung prüfen...</span>
+  </div>
 
     <input type="text" id="search" placeholder="Song oder Künstler eingeben..." />
 

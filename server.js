@@ -148,6 +148,14 @@ app.post("/add", async (req, res) => {
     res.status(400).send(err);
   }
 });
+// -------- Status-Endpunkt --------
+app.get("/status", (req, res) => {
+  if (access_token) {
+    res.json({ connected: true });
+  } else {
+    res.json({ connected: false });
+  }
+});
 
 // -------- Server starten --------
 const port = process.env.PORT || 3000;
