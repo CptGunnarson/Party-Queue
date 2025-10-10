@@ -111,13 +111,19 @@ async function addToQueue(uri) {
       body: JSON.stringify({ uri }),
     });
 
-    // Spotify gibt 204 No Content bei Erfolg zurück → trotzdem Toast zeigen
+    // Spotify gibt 204 (kein Inhalt) oder 200 bei Erfolg
     if (res.status === 200 || res.status === 204) {
       showToast("🎵 Song hinzugefügt!");
       return;
     }
 
-    // Wenn nicht erfolgreich, Text lesen und nur loggen
+    // Wenn 400 → meist kein aktives Gerät
+    if (res.status === 400) {
+      showToast("⚠️ Song evtl. nicht hinzugefügt (kein aktives Gerät?)");
+      return;
+    }
+
+    // Alle anderen Fehler nur loggen
     const errText = await res.text();
     console.warn("Fehler beim Hinzufügen:", res.status, errText);
   } catch (err) {
