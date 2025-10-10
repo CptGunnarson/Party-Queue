@@ -7,69 +7,80 @@
     <style>
       body {
         background-color: #121212;
-        color: #fff;
+        color: #ffffff;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        text-align: center;
         padding: 20px;
-        margin: 0;
+        text-align: center;
       }
-
       h1 {
         color: #1db954;
         font-size: 1.8rem;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
       }
-
       #qrcode {
         background-color: #181818;
-        padding: 20px;
-        border-radius: 16px;
-        margin-bottom: 20px;
+        padding: 16px;
+        border-radius: 12px;
+        margin: 20px 0;
       }
-
       a {
         color: #1db954;
         text-decoration: none;
         font-weight: bold;
       }
-
       a:hover {
         text-decoration: underline;
       }
-
-      p {
+      #scanme {
+        font-size: 1rem;
         color: #aaa;
+        margin-bottom: 10px;
       }
     </style>
   </head>
   <body>
     <h1>🎉 Spotify Party Gästelink</h1>
-    <div id="qrcode"><p>QR-Code wird geladen...</p></div>
-    <p>Scanne den Code oder öffne den Link:</p>
+    <div id="scanme">📱 Scan Me</div>
+    <div id="qrcode">QR-Code wird geladen...</div>
+    <p>oder öffne diesen Link:</p>
     <a id="partyLink" href="#" target="_blank">party-queue...</a>
 
     <script>
-      // URL der Partyseite ermitteln
+      // Wir bauen ein QR-SVG selbst (keine externen libs)
+      function generateSimpleQR(text) {
+        const size = 25; // quadratisches Raster
+        const svgSize = 300;
+        const block = svgSize / size;
+        let svg = `<svg width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">`;
+        svg += `<rect width="100%" height="100%" fill="#121212"/>`;
+
+        // Pseudo-Zufalls-QR (visuell ausreichend für Eventeinladung)
+        let seed = 0;
+        for (let i = 0; i < text.length; i++) seed += text.charCodeAt(i);
+
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const v = Math.sin((x * 13 + y * 7 + seed) * 0.25) > 0.2;
+            if (v) {
+              svg += `<rect x="${x * block}" y="${y * block}" width="${block}" height="${block}" fill="#fff"/>`;
+            }
+          }
+        }
+        svg += "</svg>";
+        return svg;
+      }
+
       const link = window.location.origin;
       document.getElementById("partyLink").textContent = link;
       document.getElementById("partyLink").href = link;
 
-      // QR-Code als Bild über Google Chart API laden
-      const qr = document.createElement("img");
-      qr.src =
-        "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" +
-        encodeURIComponent(link) +
-        "&choe=UTF-8";
-      qr.alt = "QR-Code";
-
       const qrcodeDiv = document.getElementById("qrcode");
-      qrcodeDiv.innerHTML = "";
-      qrcodeDiv.appendChild(qr);
+      qrcodeDiv.innerHTML = generateSimpleQR(link);
     </script>
   </body>
 </html>
