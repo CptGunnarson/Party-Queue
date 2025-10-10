@@ -84,7 +84,6 @@
         background-color: #1ed760;
       }
 
-      /* Toast-Stil */
       #toast {
         position: fixed;
         bottom: 40px;
@@ -109,7 +108,6 @@
     <h1>🎉 Spotify Party Queue</h1>
     <input id="search" type="text" placeholder="Song oder Künstler suchen..." />
     <div id="results"></div>
-
     <div id="toast"></div>
 
     <script>
@@ -134,7 +132,8 @@
           return;
         }
         searchTimeout = setTimeout(() => {
-          fetch(`/search?q=${encodeURIComponent(q)}`)
+          resultsDiv.innerHTML = "<p>⏳ Suche läuft...</p>";
+fetch(window.location.origin + `/search?q=${encodeURIComponent(q)}`)
             .then((res) => {
               if (!res.ok) throw new Error("not connected");
               return res.json();
@@ -166,8 +165,7 @@
               });
             })
             .catch(() => {
-              showToast("Bitte Spotify erneut verbinden.", "#d9534f");
-              setTimeout(() => (window.location.href = "/login"), 2000);
+              showToast("Spotify getrennt oder Token ungültig", "#d9534f");
             });
         }, 400);
       });
@@ -189,11 +187,10 @@
                 card.style.background = "#1db95433";
                 setTimeout(() => (card.style.background = "#181818"), 800);
               } else {
-                showToast("Bitte Spotify erneut verbinden.", "#d9534f");
-                          }
+                showToast("Spotify getrennt oder Token ungültig", "#d9534f");
+              }
             })
-            .catch(() =>
-              showToast("Fehler beim Hinzufügen.", "#d9534f");
+            .catch(() => showToast("Fehler beim Hinzufügen", "#d9534f"));
         }
       });
     </script>
