@@ -111,13 +111,15 @@ async function addToQueue(uri) {
       body: JSON.stringify({ uri }),
     });
 
-    if (res.ok) {
+    // Spotify gibt 204 No Content bei Erfolg zurück → trotzdem Toast zeigen
+    if (res.status === 200 || res.status === 204) {
       showToast("🎵 Song hinzugefügt!");
-    } else {
-      const errText = await res.text();
-      console.warn("Fehler beim Hinzufügen:", errText);
-      // nur loggen, keinen roten Toast
+      return;
     }
+
+    // Wenn nicht erfolgreich, Text lesen und nur loggen
+    const errText = await res.text();
+    console.warn("Fehler beim Hinzufügen:", res.status, errText);
   } catch (err) {
     console.error("Fehler beim Hinzufügen:", err);
   }
