@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
-// --- Fallback für Render: ENV-Variablen sicherstellen ---
+// --- Fallback für Render ---
 if (!process.env.SPOTIFY_CLIENT_ID && process.env.CLIENT_ID) {
   process.env.SPOTIFY_CLIENT_ID = process.env.CLIENT_ID;
 }
@@ -40,6 +40,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 
+// --- Tokens ---
 let access_token = process.env.SPOTIFY_ACCESS_TOKEN || "";
 let refresh_token = process.env.SPOTIFY_REFRESH_TOKEN || "";
 
@@ -113,7 +114,11 @@ app.get("/callback", async (req, res) => {
 
 // --- Token automatisch erneuern ---
 async function refreshAccessToken() {
-  if (!refresh_token) return;
+  if (!refresh_token) {
+    console.warn("⚠️ Kein Refresh-Token vorhanden, bitte erneut einloggen.");
+    return;
+  }
+
   try {
     const response = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
@@ -134,17 +139,22 @@ async function refreshAccessToken() {
     });
 
     const data = await response.json();
+
     if (data.access_token) {
       access_token = data.access_token;
-      console.log("Spotify Token aktualisiert");
+      console.log("♻️ Token aktualisiert (Spotify-API).");
     } else {
-      console.error("Fehler beim Token-Refresh:", data);
+      console.error("❌ Fehler beim Token-Refresh:", data);
     }
   } catch (err) {
-    console.error("Token Refresh Error:", err);
+    console.error("❌ Refresh-Error:", err.message);
   }
 }
-setInterval(refreshAccessToken, 1000 * 60 * 20); // alle 20 Minuten
+
+// beim Start einmal aktualisieren
+refreshAccessToken();
+// dann alle 30 Minuten automatisch
+setInterval(refreshAccessToken, 1000 * 60 * 30);
 
 // --- Songs suchen ---
 app.get("/search", async (req, res) => {
@@ -204,13 +214,7 @@ app.post("/add", async (req, res) => {
   }
 });
 
-// --- Homepage laden ---
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// --- Server starten ---
-// --- Token-Status prüfen ---
+// --- Status prüfen ---
 app.get("/status", async (req, res) => {
   if (!access_token) return res.json({ connected: false, reason: "Kein Token" });
 
@@ -229,6 +233,13 @@ app.get("/status", async (req, res) => {
     res.json({ connected: false, error: e.message });
   }
 });
+
+// --- Homepage ---
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// --- Server starten ---
 app.listen(PORT, () => {
-  console.log(`Server läuft auf Port ${PORT}`);
+  console.log(`✅ Server läuft auf Port ${PORT}`);
 });
