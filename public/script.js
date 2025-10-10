@@ -40,27 +40,36 @@ function showToast(message) {
   }, 2500);
 }
 
-// === Spotify-Verbindungsstatus prüfen ===
+// === Spotify-Verbindungs- UND Geräte-Status prüfen ===
 async function checkStatus() {
   try {
-    const res = await fetch("/status");
+    const res = await fetch("/device-status");
     const data = await res.json();
+
     const dot = document.getElementById("statusDot");
     const text = document.getElementById("statusText");
+
     if (!dot || !text) return;
-    if (data.connected) {
-      dot.className = "dot online";
-      text.textContent = "Spotify verbunden";
-    } else {
+
+    if (!data.connected) {
       dot.className = "dot offline";
-      text.textContent = "Nicht verbunden";
+      text.textContent = "Spotify getrennt";
+      return;
+    }
+
+    if (data.deviceActive) {
+      dot.className = "dot online";
+      text.textContent = "Spotify verbunden (Gerät aktiv)";
+    } else {
+      dot.className = "dot idle";
+      text.textContent = "Spotify verbunden (kein Gerät aktiv)";
     }
   } catch (err) {
     console.error("Statusfehler:", err);
   }
 }
 checkStatus();
-setInterval(checkStatus, 30000);
+setInterval(checkStatus, 15000);
 
 // === Suche ===
 document.getElementById("search").addEventListener("input", (e) => {

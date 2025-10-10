@@ -172,6 +172,30 @@ app.post("/add", async (req, res) => {
 
 // -------------------- Status-Endpunkt --------------------
 app.get("/status", (req, res) => {
+// Neue Route: prüft, ob ein aktives Gerät verbunden ist
+app.get("/device-status", async (req, res) => {
+  if (!access_token) {
+    return res.json({ connected: false, deviceActive: false });
+  }
+
+  try {
+    const response = await fetch("https://api.spotify.com/v1/me/player", {
+      headers: { Authorization: "Bearer " + access_token },
+    });
+    if (response.status === 204) {
+      // Kein aktives Gerät
+      return res.json({ connected: true, deviceActive: false });
+    }
+
+    const data = await response.json();
+    const deviceActive = data && data.device && data.device.is_active;
+    res.json({ connected: true, deviceActive: !!deviceActive });
+  } catch (err) {
+    console.error("Device check error:", err);
+    res.json({ connected: false, deviceActive: false });
+  }
+});
+
   res.json({ connected: !!access_token });
 });
 
