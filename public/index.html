@@ -2,105 +2,168 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spotify Party Queue</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Spotify Party Queue 🎶</title>
     <style>
+      :root {
+        --spotify-green: #1db954;
+        --spotify-green-light: #1ed760;
+        --spotify-bg: #121212;
+        --spotify-card: #181818;
+        --spotify-hover: #282828;
+        --text-light: #ffffff;
+        --text-muted: #aaaaaa;
+      }
+
       * {
         box-sizing: border-box;
-        font-family: "Arial", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
+
       body {
         margin: 0;
-        background-color: #000;
-        color: white;
+        background-color: var(--spotify-bg);
+        color: var(--text-light);
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 30px;
+        padding: 16px;
+        min-height: 100vh;
       }
+
       h1 {
-        color: #1db954;
-        margin-bottom: 15px;
+        color: var(--spotify-green);
+        font-size: 1.6rem;
+        text-align: center;
+        margin-bottom: 16px;
+        margin-top: 12px;
       }
+
       input {
-        width: 90%;
-        max-width: 400px;
-        padding: 12px 14px;
+        width: 100%;
+        max-width: 500px;
+        padding: 14px 18px;
         border: none;
         border-radius: 30px;
         font-size: 16px;
-        background-color: #282828;
-        color: white;
+        background-color: var(--spotify-card);
+        color: var(--text-light);
         outline: none;
+        text-align: center;
+        transition: background 0.2s;
       }
+
+      input:focus {
+        background-color: var(--spotify-hover);
+      }
+
       #results {
         width: 100%;
         max-width: 500px;
         margin-top: 20px;
       }
+
       .track {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 15px;
-        background-color: #181818;
-        border-radius: 10px;
+        padding: 10px 12px;
+        background-color: var(--spotify-card);
+        border-radius: 12px;
         margin-bottom: 10px;
-        transition: background 0.2s ease;
+        transition: background 0.2s;
       }
+
       .track:hover {
-        background-color: #282828;
+        background-color: var(--spotify-hover);
       }
+
       .track img {
         width: 50px;
         height: 50px;
-        border-radius: 5px;
-        margin-right: 15px;
+        border-radius: 6px;
+        flex-shrink: 0;
       }
+
       .track-info {
         flex: 1;
         display: flex;
         flex-direction: column;
+        margin: 0 10px;
+        overflow: hidden;
       }
+
       .track-info strong {
-        font-size: 16px;
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
+
       .track-info div {
-        font-size: 14px;
-        color: #aaa;
+        font-size: 13px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
+
       button {
-        background-color: #1db954;
+        background-color: var(--spotify-green);
         border: none;
         color: white;
-        font-size: 20px;
-        font-weight: bold;
-        padding: 5px 12px;
+        font-size: 22px;
+        padding: 6px 12px;
         border-radius: 50%;
         cursor: pointer;
-        transition: background 0.2s ease;
+        flex-shrink: 0;
+        transition: transform 0.15s ease, background-color 0.2s;
       }
+
       button:hover {
-        background-color: #1ed760;
+        background-color: var(--spotify-green-light);
+        transform: scale(1.1);
       }
 
       #toast {
         position: fixed;
-        bottom: 40px;
+        bottom: 25px;
         left: 50%;
         transform: translateX(-50%);
-        background: #1db954;
+        background: var(--spotify-green);
         color: white;
         padding: 14px 24px;
         border-radius: 30px;
         font-weight: bold;
+        font-size: 14px;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.3s ease;
+        max-width: 80%;
+        text-align: center;
+        z-index: 999;
       }
 
       #toast.show {
         opacity: 1;
+      }
+
+      @media (hover: none) and (pointer: coarse) {
+        /* Verbesserungen für Touchgeräte */
+        button {
+          font-size: 26px;
+          padding: 10px 14px;
+        }
+
+        .track img {
+          width: 60px;
+          height: 60px;
+        }
+
+        input {
+          font-size: 18px;
+          padding: 16px 20px;
+        }
       }
     </style>
   </head>
@@ -132,8 +195,8 @@
           return;
         }
         searchTimeout = setTimeout(() => {
-          resultsDiv.innerHTML = "<p>⏳ Suche läuft...</p>";
-fetch(window.location.origin + `/search?q=${encodeURIComponent(q)}`)
+          resultsDiv.innerHTML = "<p style='text-align:center;color:#aaa'>⏳ Suche läuft...</p>";
+          fetch(window.location.origin + `/search?q=${encodeURIComponent(q)}`)
             .then((res) => {
               if (!res.ok) throw new Error("not connected");
               return res.json();
@@ -141,23 +204,17 @@ fetch(window.location.origin + `/search?q=${encodeURIComponent(q)}`)
             .then((tracks) => {
               resultsDiv.innerHTML = "";
               if (!tracks.length) {
-                resultsDiv.innerHTML =
-                  "<p>Keine Ergebnisse gefunden.</p>";
+                resultsDiv.innerHTML = "<p style='text-align:center;color:#aaa'>Keine Ergebnisse gefunden.</p>";
                 return;
               }
-
               tracks.forEach((track) => {
                 const div = document.createElement("div");
                 div.className = "track";
                 div.innerHTML = `
-                  <img src="${
-                    track.album.images[0]?.url || ""
-                  }" alt="Cover" />
+                  <img src="${track.album.images[0]?.url || ""}" alt="Cover" />
                   <div class="track-info">
                     <strong>${track.name}</strong>
-                    <div>${track.artists
-                      .map((a) => a.name)
-                      .join(", ")}</div>
+                    <div>${track.artists.map((a) => a.name).join(", ")}</div>
                   </div>
                   <button data-uri="${track.uri}">+</button>
                 `;
@@ -179,15 +236,14 @@ fetch(window.location.origin + `/search?q=${encodeURIComponent(q)}`)
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ uri }),
           })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.success) {
+            .then(async (res) => {
+              const data = await res.json().catch(() => ({}));
+              if (res.ok && data.success) {
                 showToast("✅ Song wurde hinzugefügt!");
-                const card = e.target.closest(".track");
-                card.style.background = "#1db95433";
-                setTimeout(() => (card.style.background = "#181818"), 800);
+                e.target.style.background = "#555";
+                setTimeout(() => (e.target.style.background = "#1db954"), 700);
               } else {
-                showToast("Spotify getrennt oder Token ungültig", "#d9534f");
+                showToast(data?.error || "Fehler beim Hinzufügen", "#d9534f");
               }
             })
             .catch(() => showToast("Fehler beim Hinzufügen", "#d9534f"));
