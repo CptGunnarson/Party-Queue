@@ -3,86 +3,73 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spotify Party Gästelink 🎉</title>
+    <title>Spotify Party – Gästelink 🎉</title>
     <style>
       body {
         background-color: #121212;
         color: #fff;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        text-align: center;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        margin: 0;
+        text-align: center;
         padding: 20px;
+        margin: 0;
       }
+
       h1 {
         color: #1db954;
         font-size: 1.8rem;
         margin-bottom: 20px;
       }
+
       #qrcode {
         background-color: #181818;
         padding: 20px;
         border-radius: 16px;
         margin-bottom: 20px;
       }
+
       a {
         color: #1db954;
         text-decoration: none;
         font-weight: bold;
       }
+
       a:hover {
         text-decoration: underline;
+      }
+
+      p {
+        color: #aaa;
       }
     </style>
   </head>
   <body>
     <h1>🎉 Spotify Party Gästelink</h1>
-    <div id="qrcode">QR-Code wird geladen…</div>
+    <div id="qrcode"><p>QR-Code wird geladen...</p></div>
     <p>Scanne den Code oder öffne den Link:</p>
     <a id="partyLink" href="#" target="_blank">party-queue...</a>
 
-    <!-- Lokales QR-Code Script -->
-    <script src="/public/qrcode.min.js"></script>
-
-
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const link = window.location.origin;
-        document.getElementById("partyLink").textContent = link;
-        document.getElementById("partyLink").href = link;
+      // URL der Partyseite ermitteln
+      const link = window.location.origin;
+      document.getElementById("partyLink").textContent = link;
+      document.getElementById("partyLink").href = link;
 
-        // Sicherheitsprüfung
-        if (typeof QRCode === "undefined") {
-          document.getElementById("qrcode").textContent =
-            "❌ QRCode Bibliothek konnte nicht geladen werden.";
-          return;
-        }
+      // QR-Code als Bild über Google Chart API laden
+      const qr = document.createElement("img");
+      qr.src =
+        "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" +
+        encodeURIComponent(link) +
+        "&choe=UTF-8";
+      qr.alt = "QR-Code";
 
-        // QR-Code erzeugen
-        const canvas = document.createElement("canvas");
-        document.getElementById("qrcode").innerHTML = "";
-        QRCode.toCanvas(
-          canvas,
-          link,
-          {
-            width: 220,
-            color: { dark: "#ffffff", light: "#121212" },
-          },
-          (err) => {
-            if (err) {
-              document.getElementById("qrcode").textContent =
-                "❌ QR-Code konnte nicht erzeugt werden.";
-              console.error(err);
-            } else {
-              document.getElementById("qrcode").appendChild(canvas);
-            }
-          }
-        );
-      });
+      const qrcodeDiv = document.getElementById("qrcode");
+      qrcodeDiv.innerHTML = "";
+      qrcodeDiv.appendChild(qr);
     </script>
   </body>
 </html>
