@@ -68,7 +68,8 @@ app.get("/callback", async (req, res) => {
       access_token = data.access_token;
       refresh_token = data.refresh_token;
       console.log("✅ Spotify verbunden!");
-      res.send("✅ Spotify verbunden! Du kannst dieses Fenster schließen.");
+      // Nach erfolgreichem Login direkt zur Startseite zurückleiten
+      res.redirect("/");
     } else {
       console.error("Spotify Auth Error:", data);
       res.status(400).send("Fehler bei der Spotify-Authentifizierung.");
@@ -111,7 +112,7 @@ async function refreshAccessToken() {
   return false;
 }
 
-// === NEU: DEVICE-STATUS ROUTE ===
+// === DEVICE-STATUS ===
 app.get("/device-status", async (req, res) => {
   if (!access_token) {
     return res.json({ connected: false, deviceActive: false });
@@ -145,34 +146,44 @@ app.get("/device-status", async (req, res) => {
 app.get("/search", async (req, res) => {
   if (!access_token) return res.status(401).send("Nicht verbunden");
   const q = req.query.q;
-  const response = await fetch(
-    `https://api.spotify.com/v1/search?type=track&limit=10&q=${encodeURIComponent(
-      q
-    )}`,
-    { headers: { Authorization: "Bearer " + access_token } }
-  );
-  const data = await response.json();
-  res.json(data.tracks ? data.tracks.items : []);
+  try {
+    const response = await fetch(
+      `https://api.spotify.com/v1/search?type=track&limit=10&q=${encodeURIComponent(
+        q
+      )}`,
+      { headers: { Authorization: "Bearer " + access_token } }
+    );
+    const data = await response.json();
+    res.json(data.tracks ? data.tracks.items : []);
+  } catch (err) {
+    console.error("Suchfehler:", err);
+    res.status(500).send("Fehler bei der Suche.");
+  }
 });
 
 // === SONG ZUR QUEUE ===
 app.post("/add", async (req, res) => {
   if (!access_token) return res.status(401).send("Nicht verbunden");
   const { uri } = req.body;
-  const response = await fetch(
-    `https://api.spotify.com/v1/me/player/queue?uri=${encodeURIComponent(uri)}`,
-    {
-      method: "POST",
-      headers: { Authorization: "Bearer " + access_token },
+  try {
+    const response = await fetch(
+      `https://api.spotify.com/v1/me/player/queue?uri=${encodeURIComponent(uri)}`,
+      {
+        method: "POST",
+        headers: { Authorization: "Bearer " + access_token },
+      }
+    );
+
+    if (response.status === 204) {
+      return res.status(204).send();
     }
-  );
 
-  if (response.status === 204) {
-    return res.status(204).send();
+    const err = await response.text();
+    res.status(400).send(err);
+  } catch (err) {
+    console.error("Queue-Fehler:", err);
+    res.status(500).send("Fehler beim Hinzufügen zur Queue.");
   }
-
-  const err = await response.text();
-  res.status(400).send(err);
 });
 
 // === START SERVER ===
