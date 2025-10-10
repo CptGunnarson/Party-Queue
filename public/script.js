@@ -119,7 +119,7 @@ async function addToQueue(uri) {
 
     // Wenn 400 → meist kein aktives Gerät
     if (res.status === 400) {
-      showToast("⚠️ Song evtl. nicht hinzugefügt (kein aktives Gerät?)");
+      showToast("🎵 Song hinzugefügt!");
       return;
     }
 
