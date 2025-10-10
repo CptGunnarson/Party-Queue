@@ -239,6 +239,11 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// --- Gästeseite mit QR-Code ---
+app.get("/guest", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "guest.html"));
+});
+
 // --- Server starten ---
 app.listen(PORT, () => {
   console.log(`✅ Server läuft auf Port ${PORT}`);
