@@ -62,7 +62,7 @@ async function checkStatus() {
 checkStatus();
 setInterval(checkStatus, 30000);
 
-// === Live-Suche ===
+// === Suche ===
 document.getElementById("search").addEventListener("input", (e) => {
   clearTimeout(searchTimeout);
   const query = e.target.value.trim();
@@ -103,18 +103,22 @@ document.getElementById("search").addEventListener("input", (e) => {
 });
 
 // === Song zur Queue hinzufügen ===
-function addToQueue(uri) {
-  fetch("/add", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ uri }),
-  })
-    .then((res) => {
-      if (res.ok) {
-        showToast("🎵 Song hinzugefügt!");
-      } else {
-        console.warn("Fehler beim Hinzufügen:", res.status);
-      }
-    })
-    .catch((err) => console.error("Fehler beim Hinzufügen:", err));
+async function addToQueue(uri) {
+  try {
+    const res = await fetch("/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uri }),
+    });
+
+    if (res.ok) {
+      showToast("🎵 Song hinzugefügt!");
+    } else {
+      const errText = await res.text();
+      console.warn("Fehler beim Hinzufügen:", errText);
+      // nur loggen, keinen roten Toast
+    }
+  } catch (err) {
+    console.error("Fehler beim Hinzufügen:", err);
+  }
 }
