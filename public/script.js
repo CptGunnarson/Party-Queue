@@ -50,23 +50,24 @@ input.addEventListener("input", () => {
 });
 
 // --- Song hinzufügen ---
-async function addToQueue(uri) {
-  try {
-    const res = await fetch("/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uri }),
-    });
-
-    if (!res.ok) {
-      throw new Error("Bitte Spotify erneut verbinden.");
+fetch("/add", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ uri: track.uri }),
+})
+  .then(async (res) => {
+    if (res.ok) {
+      showToast("🎵 Song erfolgreich hinzugefügt!", "success");
+    } else {
+      const err = await res.text();
+      console.error("Queue-Error:", err);
+      showToast("⚠️ Fehler beim Hinzufügen zur Queue!", "error");
     }
-
-    showStatus("✅ Song hinzugefügt!");
-  } catch (err) {
-    showStatus(err.message, true);
-  }
-}
+  })
+  .catch((err) => {
+    console.error("Network error:", err);
+    showToast("🚫 Verbindung zu Spotify verloren. Bitte neu verbinden!", "error");
+  });
 
 // --- Statusmeldung ---
 function showStatus(message, error = false) {
