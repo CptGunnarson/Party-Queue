@@ -33,7 +33,7 @@ async function checkStatus() {
 checkStatus();
 setInterval(checkStatus, 30000);
 
-// Suche bei Eingabe
+// --- Suche ---
 document.getElementById("search").addEventListener("input", (e) => {
   clearTimeout(searchTimeout);
   const query = e.target.value.trim();
@@ -41,67 +41,41 @@ document.getElementById("search").addEventListener("input", (e) => {
     document.getElementById("results").innerHTML = "";
     return;
   }
-
-  // leichte Verzögerung, um API nicht zu spammen
   searchTimeout = setTimeout(() => {
-  fetch(`/search?q=${encodeURIComponent(query)}`)
-    .then((res) => res.json())
-    .then((tracks) => {
-      // wie gehabt...
-    })
-    .catch((err) => {
-      console.warn("Suchfehler (ignoriert):", err);
-      // kein Toast, keine Störung
-    });
-}, 400);
-        // Ergebnisse anzeigen
-        tracks.forEach((track) => {
+    fetch(`/search?q=${encodeURIComponent(query)}`)
+      .then((res) => res.json())
+      .then((tracks) => {
+        const results = document.getElementById("results");
+        results.innerHTML = "";
+        tracks.forEach((t) => {
           const div = document.createElement("div");
           div.className = "track";
-
-          const info = document.createElement("div");
-          info.className = "track-info";
-          info.innerHTML = `
-            <div class="track-name">${track.name}</div>
-            <div class="track-artist">${track.artists
-              .map((a) => a.name)
-              .join(", ")}</div>
-          `;
-
-          const button = document.createElement("button");
-          button.textContent = "Hinzufügen";
-          button.onclick = () => addToQueue(track.uri);
-
-          div.appendChild(info);
-          div.appendChild(button);
+          div.innerHTML = `
+            <div class="track-info">
+              <div class="track-name">${t.name}</div>
+              <div class="track-artist">${t.artists
+                .map((a) => a.name)
+                .join(", ")}</div>
+            </div>
+            <button>Hinzufügen</button>`;
+          div.querySelector("button").onclick = () => addToQueue(t.uri);
           results.appendChild(div);
         });
       })
-      .catch((err) => {
-        console.error(err);
-        showToast("🚫 Verbindung zu Spotify verloren. Bitte neu verbinden!", "error");
-      });
+      .catch((err) => console.error("Suchfehler:", err));
   }, 400);
 });
 
-// Song zur Queue hinzufügen
+// --- Song hinzufügen ---
 function addToQueue(uri) {
   fetch("/add", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ uri }),
-})
-  .then(async (res) => {
-    if (res.ok) {
-      showToast("🎵 Song erfolgreich hinzugefügt!", "success");
-    } else {
-      console.warn("Fehler beim Hinzufügen zur Queue (wird ignoriert)");
-      // keine Fehlermeldung mehr anzeigen
-    }
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uri }),
   })
-  .catch((err) => {
-    console.warn("Netzwerkfehler (ignoriert):", err);
-    // kein roter Toast mehr, nur still im Hintergrund loggen
-  });
-
+    .then((res) => {
+      if (res.ok) console.log("✅ Song hinzugefügt");
+      else console.warn("⚠️ Spotify antwortete mit Fehler:", res.status);
+    })
+    .catch((err) => console.error("Netzwerkfehler:", err));
 }

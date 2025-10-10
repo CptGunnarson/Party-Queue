@@ -150,11 +150,7 @@ app.post("/add", async (req, res) => {
 });
 // -------- Status-Endpunkt --------
 app.get("/status", (req, res) => {
-  if (access_token) {
-    res.json({ connected: true });
-  } else {
-    res.json({ connected: false });
-  }
+  res.json({ connected: !!access_token });
 });
 
 // -------- Server starten --------
