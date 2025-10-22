@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR-Code – Spotify Party</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+      body {
+        background: #000;
+        color: #fff;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      canvas {
+        border: 8px solid #1db954;
+        border-radius: 16px;
+        margin-bottom: 20px;
+      }
+      h1 {
+        color: #1db954;
+        font-size: 1.5rem;
+        text-align: center;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="qr"></canvas>
+    <h1>Scanne den Code, um Songs hinzuzufügen 🎶</h1>
+    <script>
+      const url = window.location.origin + "/guest";
+      const qr = new QRious({
+        element: document.getElementById("qr"),
+        value: url,
+        size: 300,
+        background: "#000",
+        foreground: "#1db954",
+      });
+      console.log("QR-Code zeigt auf:", url);
+    </script>
+  </body>
+</html>

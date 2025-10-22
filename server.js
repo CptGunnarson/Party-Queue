@@ -193,12 +193,9 @@ app.post("/add", async (req, res) => {
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
 
-// schöne URL für die Gäste-Seite:
 app.get("/guest", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "guest.html"));
 });
-
-// optional: auch mit trailing slash abdecken
 app.get("/guest/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "guest.html"));
 });
