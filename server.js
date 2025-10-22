@@ -206,6 +206,34 @@ app.get("/qr", (req, res) => {
 app.get("/qr/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "qr.html"));
 });
+// --- NOW PLAYING Seite ---
+app.get("/nowplaying", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "nowplaying.html"));
+});
+
+// --- API-Endpunkt: Aktuell laufender Song ---
+app.get("/current", async (req, res) => {
+  if (!access_token) return res.status(401).json({ error: "Nicht verbunden" });
+
+  try {
+    const response = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+      headers: { Authorization: "Bearer " + access_token },
+    });
+
+    if (response.status === 204) return res.json({ is_playing: false });
+    if (response.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) return res.redirect("/current");
+      return res.status(401).json({ error: "Token ungültig" });
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("Fehler bei /current:", err);
+    res.status(500).json({ error: "Fehler beim Abrufen des aktuellen Songs" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`✅ Server läuft auf Port ${PORT}`);

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Now Playing 🎵</title>
+    <style>
+      body {
+        background: #000;
+        color: #fff;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      img {
+        width: 300px;
+        height: 300px;
+        border-radius: 12px;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        margin-bottom: 24px;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin: 0;
+      }
+      h2 {
+        font-size: 1rem;
+        color: #ccc;
+        margin: 6px 0 0;
+      }
+      #status {
+        position: fixed;
+        bottom: 20px;
+        font-size: 0.9rem;
+        color: #777;
+      }
+    </style>
+  </head>
+  <body>
+    <img id="cover" src="" alt="Albumcover" />
+    <h1 id="title">–</h1>
+    <h2 id="artist">–</h2>
+    <div id="status">Lädt aktuellen Song …</div>
+
+    <script>
+      async function updateNowPlaying() {
+        try {
+          const res = await fetch("/current");
+          const data = await res.json();
+
+          const cover = document.getElementById("cover");
+          const title = document.getElementById("title");
+          const artist = document.getElementById("artist");
+          const status = document.getElementById("status");
+
+          if (!data || !data.is_playing) {
+            status.textContent = "⏸ Kein Song läuft aktuell";
+            cover.src = "";
+            title.textContent = "–";
+            artist.textContent = "–";
+            return;
+          }
+
+          cover.src = data.item.album.images[0].url;
+          title.textContent = data.item.name;
+          artist.textContent = data.item.artists.map((a) => a.name).join(", ");
+          status.textContent = "▶️ Jetzt läuft";
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      updateNowPlaying();
+      setInterval(updateNowPlaying, 10000); // alle 10 Sekunden aktualisieren
+    </script>
+  </body>
+</html>
