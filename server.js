@@ -187,6 +187,22 @@ app.post("/add", async (req, res) => {
 });
 
 // === START SERVER ===
+// Falls noch nicht vorhanden, stehen diese Zeilen bei dir schon weiter oben:
+// import path from "path";
+// import { fileURLToPath } from "url";
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+
+// schöne URL für die Gäste-Seite:
+app.get("/guest", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "guest.html"));
+});
+
+// optional: auch mit trailing slash abdecken
+app.get("/guest/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "guest.html"));
+});
+
 app.listen(PORT, () => {
   console.log(`✅ Server läuft auf Port ${PORT}`);
 });
