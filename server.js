@@ -199,6 +199,13 @@ app.get("/guest", (req, res) => {
 app.get("/guest/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "guest.html"));
 });
+// --- QR-Seite für Gäste-Link (/qr) ---
+app.get("/qr", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "qr.html"));
+});
+app.get("/qr/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "qr.html"));
+});
 
 app.listen(PORT, () => {
   console.log(`✅ Server läuft auf Port ${PORT}`);
