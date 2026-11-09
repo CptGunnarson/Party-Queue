@@ -133,7 +133,11 @@ app.get("/device-status", async (req, res) => {
       return res.json({ connected: refreshed, deviceActive: false });
     }
 
-    const data = await response.json();
+    if (!response.ok) {
+  const errorText = await response.text();
+  console.error("Spotify Device-Fehler:", response.status, errorText);
+  return res.json({ connected: false, deviceActive: false });
+}const data = await response.json();
     const deviceActive = data?.device?.is_active ?? false;
     res.json({ connected: true, deviceActive });
   } catch (err) {
